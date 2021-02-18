@@ -22,14 +22,16 @@ num_customer = count;
 num_worker = 1;
 pos_worker = zeros(2,num_worker);
 status_worker = ones(num_worker,1); % 0 = hq, 1 = going, 2 = working, 3 = returning 
-vel_worker = 1;                   % constant speed of van
+vel_worker = 1;                    % constant speed of van
 task_worker = zeros(num_worker,1); % customer which worker is tasked to service
 time_worker = zeros(num_worker,1); % how long worker has spent on a job 
+
+workers(num_worker,1) = Worker;
 
 % management
 cur_customer = 1; % customer index that will be added to the queue
 queue = []; % customers waiting in line
-service_time = .0001;
+jobtime = .0001;
 
 % Initialize movie with a graph
 plot(0,0,'ro')
