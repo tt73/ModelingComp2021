@@ -22,12 +22,15 @@ classdef Worker
       function obj = move(obj,dest,vel,dt) % move from point A to B
          start = obj.pos;
          d = dest - start; % direction of movement
+         d = d/norm(d);    % normalize 
          obj.pos = obj.pos + d*vel*dt; % new position
          
+         reached  = false;
          p = obj.pos - dest;
-         if (abs(dest-obj.pos)<10e-15)
+         norm(dest-obj.pos)
+         if (norm(dest-obj.pos)<10e-8)
             reached = true;
-         elseif(p(1)/d(1)<0 && p(2)/d(2)<0)
+         elseif(p(1)/d(1)>0 && p(2)/d(2)>0)
             reached = true;
          end
          

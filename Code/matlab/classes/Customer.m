@@ -11,14 +11,10 @@ classdef Customer
    end
    
    methods
-      
       function obj = Customer(t,gridsize) % this is  constructor
-         
          obj.time = t;
          obj.status = 0;
          obj.pos = 2*gridsize*rand(2,1)-gridsize;
-         
       end
-      
    end
-end
+   end
