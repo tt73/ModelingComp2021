@@ -1,0 +1,16 @@
+﻿* AIMMS
+rounding_compatibility Aimms_3_7
+use_UTC_forCaseAndStartEndDate 1
+* AOA
+* CBC 2.9
+* CONOPT 4.1
+* CPLEX 20.1
+* CPOptimizer 20.1
+* IPOPT 3.11
+* MINOS
+* ODH-CPLEX 5.3
+* PATH 4.7
+* SNOPT 7.2
+* NETSOL
+* Environment
+Default_UI 0

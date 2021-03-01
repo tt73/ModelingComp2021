@@ -5,16 +5,19 @@
 classdef Customer
    
    properties
-      time % time that customer makes a call to HQ
-      pos % 2 by 1 column x,y position
-      status % 0 = unscheduled, 1 = scheduled, 2 = serviced
+      pos    % 2 by 1 column x,y position
+      status % 0 = unserviced, 1 = serviced, 2 = canceled 
    end
    
    methods
-      function obj = Customer(t,gridsize) % this is  constructor
-         obj.time = t;
-         obj.status = 0;
-         obj.pos = 2*gridsize*rand(2,1)-gridsize;
+      function obj = Customer(gridsize,n) % this is  constructor    
+         if (nargin ~= 0)
+            obj(1,n) = obj;    
+            for i = 1:n
+               obj(i).status = 0;
+               obj(i).pos = gridsize*rand(2,1)-gridsize/2;
+            end
+         end
       end
    end
-   end
+end

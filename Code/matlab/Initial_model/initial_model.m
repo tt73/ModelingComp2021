@@ -1,5 +1,5 @@
-addpath('subroutines')
-addpath('classes')
+% deprecated code
+
 clear 
 
 T = 1;
@@ -7,11 +7,11 @@ dt = T/300;
 gridsize = 1;
 
 % generate a list of times according to poisson process
-lambda = 15; % average number of customers from 0 to 1
+lambda = 10; % average number of customers from 0 to 1
 count = 0;
 t = -log(1-rand)/lambda; % time at which first customer calls
 while (t < T)
-   customers(count+1) = Customer(t,gridsize); % construct a customer
+   customers(count+1) = Customer(gridsize,t); % construct a customer
    t = t - log(1-rand)/lambda;
    count = count + 1;
 end
@@ -19,7 +19,7 @@ num_customer = count;
 
 % workers
 num_workers = 3;
-vel_worker = 15;     % constant speed of van
+vel_worker = 12;     % constant speed of van
 workers(num_workers,1) = Worker;
 
 % management
@@ -59,6 +59,7 @@ for t = 0:dt:T
                   workers(w).status = 1;
                   workers(w).task = c;
                   customers(c).status = 1;
+                  break
                end
             end
          end
@@ -77,9 +78,7 @@ for t = 0:dt:T
             % when he arrives, change his status to 2
             destination = customers(c).pos;
             workers(w) = workers(w).move(destination,vel_worker,dt);
-            
-            disp(workers(w).pos)
-            disp(workers(w).status)
+
          case 2
             % worker is at the house
             % he works for dt amount of time 
@@ -89,7 +88,7 @@ for t = 0:dt:T
                workers(w).worktime = 0;
                workers(w).status = 3;
                customers(c).status = 2;
-               
+               queue = queue(queue~=c);
             end
             
          case 3
@@ -109,7 +108,7 @@ for t = 0:dt:T
    for i = 1:length(queue)
       c = queue(i);
       plot(customers(c).pos(1),customers(c).pos(2),'k.')
-      text(customers(c).pos(1),customers(c).pos(2),num2str(c);
+      text(customers(c).pos(1),customers(c).pos(2),num2str(c))
    end
    for i = 1:num_workers
       plot(workers(i).pos(1),workers(i).pos(2),'bs')
