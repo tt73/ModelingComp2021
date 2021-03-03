@@ -7,7 +7,7 @@ classdef Customer
    properties
       pos    % 2 by 1 column x,y position
       status % 0 = unscheduled, 1 = scheduled, 2 = serviced
-      time   % time that customer makes a call to HQ
+      time   % time 
    end
    
    methods

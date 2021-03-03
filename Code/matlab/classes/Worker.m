@@ -11,6 +11,7 @@ classdef Worker
       waittime  % time spent waiting at customer's house
       worktime  % time spent working on customer
       curtask   % current task
+      curvel    % velocity to next destination (has +/- noise) 
       tasks     % indeces of assigned customers
       dest      % [x; y] location of destination
       total_drivetime
