@@ -6,8 +6,13 @@ classdef Customer
    
    properties
       pos    % 2 by 1 column x,y position
-      status % 0 = unserviced, 1 = serviced, 2 = canceled 
+      status % 0 = unserviced, 
+             % 1 = being/about to be servied, 
+             % 2 = serviced, 
+             % 3 = canceled 
       service_time % time required to finish in minutes
+      scheduled_time 
+      arrival_time % time at which worker has arrived
    end
    
    methods

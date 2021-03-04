@@ -12,8 +12,10 @@ function [] = plot_customers(num_customers,customers)
          case 0
             marker = 'g.';
          case 1
-            marker = 'b.';
+            marker = 'y.';
          case 2
+            marker = 'b.';
+         case 3
             marker = 'r.';
       end
       plot(customers(i).pos(1),customers(i).pos(2),marker,'markersize',10)

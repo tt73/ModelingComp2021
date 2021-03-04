@@ -6,12 +6,16 @@ classdef Worker
    
    properties
       pos       % [x; y] current position
-      status    % 0 = idle, 1 = driving, 2 = waiting, 3 = working
+      status    % 0 = idle
+      % 1 = driving
+      % 2 = waiting at customers house
+      % 3 = working
+      % 4 = done
       drivetime % time spent driving to destination
       waittime  % time spent waiting at customer's house
       worktime  % time spent working on customer
       curtask   % current task
-      curvel    % velocity to next destination (has +/- noise) 
+      curvel    % velocity to next destination (has +/- noise)
       tasks     % indeces of assigned customers
       dest      % [x; y] location of destination
       total_drivetime
@@ -34,7 +38,7 @@ classdef Worker
          end
       end
       
-      function obj = choose_dest(obj,customers)
+      function obj = choose_dest_and_speed(obj,customers,vel)
          assert(obj.status == 0);
          if (~isempty(obj.tasks))
             dests = [customers(obj.tasks).pos];
@@ -42,15 +46,19 @@ classdef Worker
             [val, ind] = min(dists);
             obj.dest = dests(:,ind);
             obj.curtask = obj.tasks(ind);
-            obj.status = 1;
+         else
+            obj.dest = [0;0]; % go back to base
+            obj.curtask = 0;
          end
+         obj.curvel = vel + randn/3; % add some noise to speed
+         obj.status = 1;
       end
       
-      function obj = move(obj,vel,dt) % move to destination
+      function [obj,reached] = move(obj,dt) % move to destination
          assert(obj.status==1);
          d = obj.dest - obj.pos; % direction of movement
          d = d/norm(d);    % normalize
-         obj.pos = obj.pos + d*vel*dt; % new position
+         obj.pos = obj.pos + d*obj.curvel*dt; % new position
          obj.drivetime = obj.drivetime + dt;
          
          reached  = false;
@@ -63,18 +71,28 @@ classdef Worker
          end
          
          if(reached)
-            obj.status = 2; % change status to waiting
             obj.total_drivetime = obj.total_drivetime + obj.drivetime;
             obj.drivetime = 0;
+            if (obj.curtask > 0)
+               obj.status = 2; % change status to waiting
+            else
+               obj.status = 4;
+            end
          end
       end
       
-      function obj = wait(obj,dt,customers) % move to destination
+      function [obj,ready] = wait(obj,dt,scheduled_time) % move to destination
          assert(obj.status == 2);
          
-         % need to fix this later
-         ready = true;
+         % just wait until scheduled time is passed
+         obj.waittime = obj.waittime + dt;
+         if (obj.waittime >= scheduled_time) 
+            ready = true;
+         else
+            ready = false;
+         end
          
+         % update status
          if(ready)
             obj.status = 3; % change status to working
             obj.total_waittime = obj.total_waittime + obj.waittime;
@@ -82,12 +100,18 @@ classdef Worker
          end
       end
       
-      function obj = work(obj,dt,customers) % move to destination
+      function [obj,finished] = work(obj,dt,service_time) % move to destination
          assert(obj.status == 3);
          
-         % need to fix this later
-         finished = true;
+         % Do work
+         obj.worktime = obj.worktime + dt;
+         if (obj.worktime >= service_time)
+            finished = true;
+         else
+            finished = false;
+         end
          
+         % Update status if done
          if(finished)
             obj.status = 0; % change status to idle
             obj.total_worktime = obj.total_worktime + obj.worktime;

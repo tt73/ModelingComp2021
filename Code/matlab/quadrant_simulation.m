@@ -30,8 +30,12 @@ gridsize = 50; % km
 vel = 1;       % km/min
 
 % customers
-num_customers = 40;
-customers = Customer(gridsize,num_customers,30,60);
+num_customers = 20;
+tmin = 30;
+tmax = 60;
+% tmin = 2;
+% tmax = 5;
+customers = Customer(gridsize,num_customers,tmin,tmax);
 
 % workers
 num_workers = 4;
@@ -51,40 +55,56 @@ workers(4).tasks = find( xpos & ~ypos);
 % disp(workers(3).tasks)
 % disp(workers(4).tasks)
 
+
+% Loop variables
+t = 0;
+dt = 0.5;  % miniutes
+simulation_done = false;
+
 % Initialize movie with a graph
 plot(0,0,'ro')
 set(gca,'nextplot','replacechildren');
 v = VideoWriter('basic1.mp4','MPEG-4');
+set(gcf,'color','w');
 open(v);
-
-
-t = 0;
-dt = 0.5;  % miniutes 
-simulation_done = false;
 
 while (~simulation_done)
    
    % assign destination to idle workers
    for w = 1:num_workers
       if (workers(w).status == 0)
-         workers(w) = workers(w).choose_dest(customers);
+         workers(w) = workers(w).choose_dest_and_speed(customers,vel);
       end
    end
    
    % update workers based on status
    for w = 1:num_workers
+      c = workers(w).curtask; % c is the current customer of focus
       switch workers(w).status
+         
+         % Case 1: move until destination is reached
          case 1
-            workers(w) = workers(w).move(vel,dt);
+            [workers(w),reached] = workers(w).move(dt);
+            if (reached && c>0)
+               customers(c).status = 1;
+            end
+            
+            % Case 2: wait until scheduled time is passed
          case 2
-            workers(w) = workers(w).wait(dt,customers);
+            [workers(w),ready] = workers(w).wait(dt,0);
+            if (ready)
+            end
+            
+            % Case 3: work until the job is done
          case 3
-            workers(w) = workers(w).work(dt,customers);
-            customers(workers(w).curtask).status = 1;
+            [workers(w),finished] = workers(w).work(dt,customers(c).service_time);
+            if (finished)
+               customers(workers(w).curtask).status = 2;
+            end
       end
    end
    
-      
+   
    % plot HQ - (this will delete the previous plot)
    plot(0,0,'ro')
    plot_customers(num_customers,customers)
@@ -94,11 +114,15 @@ while (~simulation_done)
    end
    hold off
    
-   simulation_done = check_customers(num_customers,customers);
+   simulation_done = check_workers(num_workers,workers);
    
    % take the plot, and save it
    title(sprintf('Time = %.3f (min)',t))
    axis([-gridsize/2, gridsize/2, -gridsize/2, gridsize/2])
+   axis('square')
+   set(gcf,'position',[0,0,800,750])
+   set(gcf,'color','w');
+   set(gca,'color',[.4 .4 .4]);
    xlabel('x (km)')
    ylabel('y (km)')
    frame = getframe(gcf);
@@ -106,7 +130,7 @@ while (~simulation_done)
    
    t = t + dt;
 end
- 
+
 close(v);
 
 
