@@ -41,19 +41,19 @@ customers = Customer(gridsize,num_customers,tmin,tmax);
 num_workers = 4;
 workers = Worker(num_workers);
 
-% assign customers to workers
-positions = [customers.pos];
-xpos = positions(1,:) > 0;
-ypos = positions(2,:) > 0;
-workers(1).tasks = find( xpos &  ypos);
-workers(2).tasks = find(~xpos &  ypos);
-workers(3).tasks = find(~xpos & ~ypos);
-workers(4).tasks = find( xpos & ~ypos);
+% compute average arrival times for each customer 
 
-% disp(workers(1).tasks)
-% disp(workers(2).tasks)
-% disp(workers(3).tasks)
-% disp(workers(4).tasks)
+
+% build a schedule 
+ast = (tmin+tmax)/2;
+[arrival_times,routing] = build_sched_quadrant(customers,vel,ast);
+for i = 1:4
+   workers(i).tasks = routing{i};
+end
+for i = 1:num_customers
+   customers(i).scheduled_time = floor(arrival_times(i));
+end
+% simulate cancellation 
 
 
 % Loop variables

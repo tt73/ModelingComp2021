@@ -5,19 +5,23 @@
 classdef Worker
    
    properties
-      pos       % [x; y] current position
-      status    % 0 = idle
+      
+      % 0 = idle 
       % 1 = driving
       % 2 = waiting at customers house
       % 3 = working
       % 4 = done
-      drivetime % time spent driving to destination
-      waittime  % time spent waiting at customer's house
-      worktime  % time spent working on customer
+      status   
+      pos       % [x; y] current position
       curtask   % current task
       curvel    % velocity to next destination (has +/- noise)
       tasks     % indeces of assigned customers
       dest      % [x; y] location of destination
+      
+      % statistics 
+      drivetime % time spent driving to destination
+      waittime  % time spent waiting at customer's house
+      worktime  % time spent working on customer
       total_drivetime
       total_waittime
       total_worktime
@@ -81,12 +85,12 @@ classdef Worker
          end
       end
       
-      function [obj,ready] = wait(obj,dt,scheduled_time) % move to destination
+      function [obj,ready] = wait(obj,dt,time,scheduled_time) % move to destination
          assert(obj.status == 2);
          
          % just wait until scheduled time is passed
          obj.waittime = obj.waittime + dt;
-         if (obj.waittime >= scheduled_time) 
+         if (time >= scheduled_time) 
             ready = true;
          else
             ready = false;

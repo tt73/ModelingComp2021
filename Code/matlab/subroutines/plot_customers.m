@@ -21,5 +21,6 @@ function [] = plot_customers(num_customers,customers)
       plot(customers(i).pos(1),customers(i).pos(2),marker,'markersize',10)
       text(customers(i).pos(1),customers(i).pos(2),num2str(i))
    end
+   hold off
 end
 
