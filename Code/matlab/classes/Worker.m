@@ -17,6 +17,7 @@ classdef Worker
       curvel    % velocity to next destination (has +/- noise)
       tasks     % indeces of assigned customers
       dest      % [x; y] location of destination
+      schedule  % array of appointment times
       
       % statistics 
       drivetime % time spent driving to destination

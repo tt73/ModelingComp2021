@@ -56,19 +56,22 @@ chance = 0.05;
 cancels = [];
 for i = 1:num_customers
    if (rand < chance)
-      customers(i).status = 3;
+      customers(i).status = 4;
       cancels = [cancels, i];
    end
 end
+disp("cancellations:")
+disp(cancels)
+
 
 % assign the routing
 for i = 1:4
-   workers(i).tasks = routing{i}(~ismember(routing{i},cancels))
+   workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
 end
 
 % Loop variables
 t = 0;
-dt = 0.5;  % miniutes
+dt = 1;  % miniutes
 simulation_done = false;
 
 % Initialize movie with a graph
@@ -80,10 +83,35 @@ open(v);
 
 while (~simulation_done)
    
-   % assign destination to idle workers
+   % Assign destination to idle workers.
+   % There will be some noise in the speed due to traffic.
    for w = 1:num_workers
       if (workers(w).status == 0)
          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+      end
+   end
+   
+   % Update customers.
+   for c = 1:num_customers
+      switch customers(c).status
+         
+         case 2
+            continue % do nothing
+            
+         case 3
+            continue % do nothing
+            
+         case 4
+            continue % do nothing
+         
+         % Case 0: determine if appointment time has passed
+         case 0
+            customers(c) = customers(c).check_sched(t);
+            
+         % Case 1: keep track of time spent waiting
+         case 1
+            customers(c) = customers(c).wait(dt);
+     
       end
    end
    
@@ -96,21 +124,21 @@ while (~simulation_done)
          case 1
             [workers(w),reached] = workers(w).move(dt);
             if (reached && c>0)
-               customers(c).status = 1;
+               customers(c).arrival_time = t;
             end
             
          % Case 2: wait until scheduled time is passed
          case 2
             [workers(w),ready] = workers(w).wait(dt,t,customers(c).scheduled_time);
             if (ready)
-               
+               customers(c).status = 2;
             end
             
          % Case 3: work until the job is done
          case 3
             [workers(w),finished] = workers(w).work(dt,customers(c).service_time);
             if (finished)
-               customers(workers(w).curtask).status = 2;
+               customers(workers(w).curtask).status = 3;
             end
       end
    end
@@ -120,7 +148,7 @@ while (~simulation_done)
    plot(0,0,'ro','MarkerFaceColor','r')
    plot_customers(num_customers,customers)
    plot_workers(num_workers,workers)
- 
+   
    simulation_done = check_workers(num_workers,workers);
    
    % take the plot, and save it
@@ -139,5 +167,21 @@ while (~simulation_done)
 end
 
 close(v);
+
+
+%% Print out statistics
+appointment_times = [customers.scheduled_time];
+arrival_times = [customers.arrival_time];
+figure 
+plot(1:num_customers,appointment_times,'b-','LineWidth',2')
+hold on
+for i = 1:num_customers
+   
+   plot([i,i],[appointment_times(i),arrival_times(i)],'r--')
+   
+end
+
+
+
 
 
