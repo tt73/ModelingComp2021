@@ -33,9 +33,9 @@ vel = 1;       % km/min
 num_customers = 20;
 tmin = 30;
 tmax = 60;
-% tmin = 2;
-% tmax = 5;
-customers = Customer(gridsize,num_customers,tmin,tmax);
+mst = (tmax-tmin)*rand + tmin;
+sd = mst/2;
+customers = Customer(gridsize,num_customers,mst,sd);
 
 % workers
 num_workers = 4;
@@ -65,6 +65,7 @@ disp(cancels)
 
 
 % assign the routing
+% crude simple strat 
 for i = 1:4
    workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
 end
@@ -87,31 +88,20 @@ while (~simulation_done)
    % There will be some noise in the speed due to traffic.
    for w = 1:num_workers
       if (workers(w).status == 0)
-         workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+%          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+         workers(w) = choose_dest_and_speed(workers(w),customers,vel);
       end
    end
    
    % Update customers.
    for c = 1:num_customers
       switch customers(c).status
-         
-         case 2
-            continue % do nothing
-            
-         case 3
-            continue % do nothing
-            
-         case 4
-            continue % do nothing
-         
          % Case 0: determine if appointment time has passed
-         case 0
-            customers(c) = customers(c).check_sched(t);
-            
-         % Case 1: keep track of time spent waiting
-         case 1
-            customers(c) = customers(c).wait(dt);
-     
+         case 0 
+            customers(c) = customers(c).check_status(t);
+         
+         case {1,2,3,4}
+            continue % do nothing
       end
    end
    
@@ -123,8 +113,12 @@ while (~simulation_done)
          % Case 1: move until destination is reached
          case 1
             [workers(w),reached] = workers(w).move(dt);
-            if (reached && c>0)
-               customers(c).arrival_time = t;
+            if (reached)
+               if (c > 0)
+                  customers(c).arrival_time = t;
+               else
+                  workers(w).end_time = t;
+               end
             end
             
          % Case 2: wait until scheduled time is passed
@@ -169,19 +163,19 @@ end
 close(v);
 
 
-%% Print out statistics
-appointment_times = [customers.scheduled_time];
-arrival_times = [customers.arrival_time];
-figure 
-plot(1:num_customers,appointment_times,'b-','LineWidth',2')
-hold on
-for i = 1:num_customers
-   
-   plot([i,i],[appointment_times(i),arrival_times(i)],'r--')
-   
-end
+%% Compute Cost 
 
 
+% Inputs: 
+worker_hire_cost = 100; 
+customer_wait_rate = rand*10;
+worker_idle_rate = rand*5;
+worker_travel_rate = 1/2;
+worker_OT_rate = 1/2;
+standard_service_hours = 8; %time when overtime hours begin 
 
 
-
+% call function 
+[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, worker_hire_cost, ...
+   customer_wait_rate, worker_idle_rate, worker_travel_rate, ...
+   worker_OT_rate, standard_service_hours, true);

@@ -26,6 +26,7 @@ classdef Worker
       total_drivetime
       total_waittime
       total_worktime
+      end_time  % time that worker returned to base
    end
    
    methods
@@ -53,7 +54,7 @@ classdef Worker
             obj.curtask = obj.tasks(ind);
          else
             obj.dest = [0;0]; % go back to base
-            obj.curtask = 0;
+            obj.curtask = 0; % change task to zero 
          end
          obj.curvel = vel + randn/3; % add some noise to speed
          obj.status = 1;
