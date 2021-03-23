@@ -1,24 +1,6 @@
 %%
 % Written by Tada
-% This little script creates a video of the quadrant model.
-% All it does is show a simulation of workers moving from customer to
-% customer until everyone is serviced.
 
-%% Assumptions about customers
-% There are N customers and all of their locations are uniformly generated
-% and their posistions are known. They don't have a scheduled time, so they
-% welcome the workers as soon as they arrive. The time it takes to complete
-% a service is instantaneous. Furthermore, they never randomly cancel their
-% appointment.
-
-%% Assumption about workers
-% There are only 4. They all have contant velocity and ignore randomness of
-% traffic. They are assigned the customers in their quadrant. Starting from
-% the origin (0,0), they move to the closest customer in their list. Once
-% there, the workers immediately switch from waiting to working, and then
-% immediatly change from working to finished. The workers check off the
-% customer from their list of tasks and then moves on the closest customer
-% still on their list. When they finish their task, they do nothing.
 
 %% Add functions in folders to path
 addpath('subroutines')
@@ -38,10 +20,8 @@ worker_hire_cost = 100;
 customer_wait_rate = rand*10;
 worker_idle_rate = rand*5;
 worker_travel_rate = 1/2;
-worker_OT_rate = 1/2;
+worker_OT_rate = 1.5*worker_idle_rate;
 standard_service_hours = 8; %time when overtime hours begin
-
-
 
 %% Generate Customers
 
@@ -85,8 +65,7 @@ for i = 1:num_customers
    customers(i).scheduled_time = floor(arrival_times(i));
 end
 
-% Simulate cancellation. Each customer are IID. They cancel with some given
-% probability.
+% Simulate cancellation. 
 chance = 0.05;
 cancels = [];
 for i = 1:num_customers
@@ -98,9 +77,8 @@ end
 disp("cancellations:")
 disp(cancels)
 
-
-% Assign the route to the
-for i = 1:4
+% Assign routes.
+for i = 1:num_workers
    workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
 end
 
@@ -112,7 +90,6 @@ if(make_video)
    set(gcf,'color','w');
    open(v);
 end
-
 
 % Loop variables
 t = 0;

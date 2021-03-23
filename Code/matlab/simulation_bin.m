@@ -60,7 +60,7 @@ workers = Worker(num_workers);
 % Build a schedule (appointment for customers) specifically for the
 % quadrant model. The appointment times are chosen to be the average
 % arrival time of the workers assuming nobody cancels.
-[arrival_times,routing] = build_sched_scatter(workers,customers,vel,mst);
+[arrival_times,routing] = build_sched_bin(workers,customers,vel,mst);
 
 
 for i = 1:num_customers
