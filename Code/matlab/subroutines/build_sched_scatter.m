@@ -1,0 +1,71 @@
+function [arrival_times, routing] = build_sched_scatter(workers,customers,vel,AST)
+
+addpath('../')
+m = length(workers);
+n = length(customers);
+arrival_times = zeros(n,1); % time which customer gets serviced
+accounted = zeros(n,1);
+routing = cell(m,1);
+
+
+% find the m closest customers to HQ
+c_pos = [customers.pos]; % 2 by n array of positions
+% dists = vecnorm(c_pos);
+% [val, ind] = sort(dists);
+% for i = 1:m
+%    routing{i} = ind(i);
+%    w_pos(:,i) = c_pos(:,ind(i));
+%    serviced(ind(i)) = 1;
+% end
+
+t = 0;
+dt = 0.5;
+while (~all(arrival_times))
+   
+   % assign a job to workers among customers unaccounted for
+   if(~all(accounted))
+      for w = 1:m
+         if (workers(w).status == 0)
+            dists = vecnorm(c_pos-workers(w).pos);
+            [val, ind] = min(dists);
+            workers(w).dest = c_pos(:,ind);
+            workers(w).curtask = ind;
+            accounted(ind) = 1;
+            workers(w).curvel = vel;
+            workers(w).status = 1;
+            c_pos(:,ind) = inf; 
+            routing{w} = [routing{w}, ind];
+         end
+      end
+   end
+   
+   % update workers based on status
+   for w = 1:m
+      c = workers(w).curtask; % c is the current customer of focus
+      switch workers(w).status
+         
+         % Case 1: move until destination is reached
+         case 1
+            [workers(w),reached] = workers(w).move(dt);
+            if (reached)
+               arrival_times(c) = t; % track arrival time
+            end
+            
+            % Case 2: no waiting, immediately start working
+         case 2
+            workers(w).status = 3;
+            
+            % Case 3: work for average service time (AST) minutes
+         case 3
+            workers(w).worktime = workers(w).worktime + dt;
+            if (workers(w).worktime >= AST)
+               workers(w).status = 0;
+               workers(w).worktime = 0;
+            end
+      end
+   end
+   t = t + dt;
+end
+
+end
+

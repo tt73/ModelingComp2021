@@ -11,7 +11,6 @@ ji = 0;
 jw = 0;
 for c = 1:N
    diff = customers(c).scheduled_time - customers(c).arrival_time;
-   disp("diff = " + num2str(diff))
    if(customers(c).status ~= 4)
       if (diff < 0) % worker arrived too late
          jw = jw - diff;

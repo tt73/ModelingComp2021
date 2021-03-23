@@ -47,16 +47,18 @@ classdef Worker
       function obj = choose_dest_and_speed(obj,customers,vel)
          assert(obj.status == 0);
          if (~isempty(obj.tasks))
-            dests = [customers(obj.tasks).pos];
-            dists = vecnorm(dests-obj.pos);
-            [val, ind] = min(dists);
-            obj.dest = dests(:,ind);
-            obj.curtask = obj.tasks(ind);
+%             dests = [customers(obj.tasks).pos];
+%             dists = vecnorm(dests-obj.pos);
+%             [val, ind] = min(dists);            
+%             obj.dest = dests(:,ind);
+%             obj.curtask = obj.tasks(ind);
+            obj.curtask = obj.tasks(1);
+            obj.dest = customers(obj.curtask).pos;
          else
             obj.dest = [0;0]; % go back to base
             obj.curtask = 0; % change task to zero 
          end
-         obj.curvel = vel + randn/3; % add some noise to speed
+         obj.curvel = vel + randn/5; % add some noise to speed
          obj.status = 1;
       end
       
@@ -122,7 +124,8 @@ classdef Worker
             obj.status = 0; % change status to idle
             obj.total_worktime = obj.total_worktime + obj.worktime;
             obj.worktime = 0;
-            obj.tasks = obj.tasks(obj.tasks~= obj.curtask);
+%             obj.tasks = obj.tasks(obj.tasks~= obj.curtask);
+            obj.tasks = obj.tasks(2:end); % just remove 
          end
       end
       

@@ -38,10 +38,8 @@ worker_hire_cost = 100;
 customer_wait_rate = rand*10;
 worker_idle_rate = rand*5;
 worker_travel_rate = 1/2;
-worker_OT_rate = 1/2;
+worker_OT_rate = 1.5*worker_idle_rate;
 standard_service_hours = 8; %time when overtime hours begin
-
-
 
 %% Generate Customers
 
@@ -58,7 +56,7 @@ sd = mst/2; % standard deviation of service time
 customers = Customer(gridsize,num_customers,mst,sd);
 
 %% Choose number of workers
-num_workers = 4;
+num_workers = 8;
 
 
 %% Begin Computation of cost
@@ -80,7 +78,9 @@ workers = Worker(num_workers);
 % Build a schedule (appointment for customers) specifically for the
 % quadrant model. The appointment times are chosen to be the average
 % arrival time of the workers assuming nobody cancels.
-[arrival_times,routing] = build_sched_quadrant(customers,vel,mst);
+[arrival_times,routing] = build_sched_scatter(workers,customers,vel,mst);
+
+
 for i = 1:num_customers
    customers(i).scheduled_time = floor(arrival_times(i));
 end
@@ -100,7 +100,7 @@ disp(cancels)
 
 
 % Assign the route to the
-for i = 1:4
+for i = 1:num_workers
    workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
 end
 
@@ -207,5 +207,3 @@ end
 [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, worker_hire_cost, ...
    customer_wait_rate, worker_idle_rate, worker_travel_rate, ...
    worker_OT_rate, standard_service_hours, true);
-
-total_cost = jm + ji + jw + jt + jo
