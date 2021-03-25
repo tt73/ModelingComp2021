@@ -31,7 +31,7 @@ count = histcounts(angle,edges);
 % For each non empty bin ... 
 %    Simulate workers moving from customer to customer based on proximity
 %    Keep track of which worker moves to which customers
-%    Keep track of the time at which the workers arrive 
+%    Keep track of the time at which the workers arrive a
 
 end
 
