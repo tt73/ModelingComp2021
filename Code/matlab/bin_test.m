@@ -18,7 +18,7 @@ end
 % Create 
 da = 30;
 edges = 0:da:360;
-%change this
+
 count = histcounts(angle,edges)
 
 figure 
