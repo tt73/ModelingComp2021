@@ -4,8 +4,9 @@
 load_settings;
 
 %% Choose number of workers
-num_workers = num_customers/2;
-
+% num_workers = num_customers/2;
+minND=7; maxND=15; w=0.9;
+num_workers=DetermineWorkers(customers,minND,maxND,w,true);
 
 %% Begin Computation of cost
 %
