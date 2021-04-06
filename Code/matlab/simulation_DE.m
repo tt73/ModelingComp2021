@@ -1,22 +1,17 @@
 %%
-% Written by Tada
+% Written by Tada, Jimmie 
+%
+% This is the simulation which uses the differential evolution to compute
+% the optimal routing and number of workers at the same time. 
 
 load_settings;
 
 %% Choose number of workers
-% 
-
-minM = 4; 
-maxM = num_customers;
-M = minM:maxM;
-costs = zeros(maxM-minM+1,1);
-for i = 1:length(costs)
-   workers = Worker(M(i));
-   [~,routing] = build_sched_scatter(workers,customers,vel,mst);
-    costs(i) = compute_deterministic_cost(routing,customers,vel,mst,worker_hire_cost,worker_travel_rate,worker_OT_rate,standard_service_hours);
-end
-[~,ind] = min(costs);
-num_workers = M(ind);
+% num_workers = num_customers/2;
+minND=7; 
+maxND=15; 
+w=0.9; % 0 < w < 1, 
+num_workers = DetermineWorkers(customers,minND,maxND,w,true);
 
 %% Begin Computation of cost
 %
@@ -27,7 +22,7 @@ num_workers = M(ind);
 % cancellation.
 
 % Option to make video
-make_video = false;
+make_video = true;
 
 %% Start
 
@@ -65,7 +60,7 @@ end
 
 % Initialize movie with a plot
 if(make_video)
-   figure 
+   figure
    plot(0,0,'ro','MarkerFaceColor','r')
    set(gca,'nextplot','replacechildren');
    v = VideoWriter('scatter.mp4','MPEG-4');

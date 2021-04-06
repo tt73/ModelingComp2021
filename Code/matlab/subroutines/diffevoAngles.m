@@ -30,10 +30,10 @@ end
 counter=0;tic
 
 while counter<DEparams.Nmax
-    newpop=pop;
-    newfpop=fpop;
-    for i=1:DEparams.NP
-        for j=1:DEparams.ND
+    newpop = pop;
+    newfpop = fpop;
+    for i = 1:DEparams.NP
+        for j = 1:DEparams.ND
             currentmember=pop(j,i);
             %Choose 3 distinct elements different from current member
             randind=randsample(DEparams.NP,3);
@@ -63,7 +63,7 @@ while counter<DEparams.Nmax
         
     end
     
-    %Update
+    % Update
     counter=counter+1;
     pop=newpop;
     fpop=newfpop;

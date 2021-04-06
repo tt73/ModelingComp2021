@@ -22,9 +22,11 @@ for i = 1:4
    tasks = all_tasks{i};
    route = [];
    while(~isempty(tasks)) % while array is nonempty
+      
+      % find the closest customer
       dests = [customers(tasks).pos];
       dists = vecnorm(dests-pos);
-      [val, ind] = min(dists);
+      [~, ind] = min(dists); % index of closest customer 
       customer = tasks(ind); % closest customer
       route = [route, customer];
       

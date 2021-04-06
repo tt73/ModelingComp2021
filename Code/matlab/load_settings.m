@@ -12,17 +12,17 @@ gridsize = 50; % km
 vel = 1; % km/min
 
 % Cost parameters
-worker_hire_cost = 100;
-customer_wait_rate = rand*10;
-worker_idle_rate = rand*5;
-worker_travel_rate = 1/2;
-worker_OT_rate = 1.5*worker_idle_rate;
+worker_hire_cost = 100;       % pm  
+customer_wait_rate = rand*10; % pw
+worker_idle_rate = rand*5;    % pi 
+worker_travel_rate = 1;     % pt 
+worker_OT_rate = 1.5*worker_idle_rate; % po
 standard_service_hours = 8; %time when overtime hours begin
 
 %% Generate Customers
 
 % customer parameters
-num_customers = 20;  % number of customers
+num_customers = 30;  % number of customers
 
 % service time is random normal
 tmin = 30;  % min job duration

@@ -16,7 +16,7 @@ num_workers = 4;
 % cancellation.
 
 % Option to make video
-make_video = true;
+make_video = false;
 
 %% Start
 
@@ -27,6 +27,7 @@ workers = Worker(num_workers);
 % quadrant model. The appointment times are chosen to be the average
 % arrival time of the workers assuming nobody cancels.
 [arrival_times,routing] = build_sched_quadrant(customers,vel,mst);
+plot_routing(routing,[customers.pos],gridsize)
 for i = 1:num_customers
    customers(i).scheduled_time = floor(arrival_times(i));
 end
@@ -49,6 +50,7 @@ end
 
 % Initialize movie with a plot
 if(make_video)
+   figure
    plot(0,0,'ro','MarkerFaceColor','r')
    set(gca,'nextplot','replacechildren');
    v = VideoWriter('basic1.mp4','MPEG-4');
