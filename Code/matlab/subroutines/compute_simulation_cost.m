@@ -1,5 +1,12 @@
-function [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, pm, pw, pi, pt, po, ssh, show)
-if(nargin==8)
+function [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj, show)
+pm = cost_obj.pm;
+pw = cost_obj.pw;
+pi = cost_obj.pi;
+pt = cost_obj.pt;
+po = cost_obj.po;
+ssh = cost_obj.L;
+
+if(nargin==3)
    show = false;
 end
 M = length(workers);

@@ -1,7 +1,7 @@
 %%
 % Written by Jimmie 
 %
-function [J,numworkers,routing] = sectorObjective(testangle,customers,w,make_plots)
+function [J,numworkers] = sectorObjective(testangle,customers,w,make_plots)
 % routing (numworker by 1) cell array 
 numsects = length(testangle);
 J = 0;
@@ -21,21 +21,26 @@ for i=1:N
    pos(i,:) = tempcust.pos;
 end
 
-if make_plots
+if make_plots % plot all customers as * 
    plot(pos(:,1),pos(:,2),'*'),hold on
 end
+
+testangle = sort(testangle); % this is crucial 
 
 metrics=zeros(numsects,1);
 for i=1:numsects
    
+   % Get a mask (bool array) for all customers in current sector 
    if i==numsects 
       sectorindex = (testangle(i)<ang) | (ang<testangle(1)); % last sector
    else
       sectorindex = (testangle(i)<ang) & (ang<testangle(i+1)); % all other sectors
    end
    
+   % extract position of customers in sector 
    x = pos(sectorindex,1); x = [0;x]';
    y = pos(sectorindex,2); y = [0;y]';
+   
    P = [x; y]; % coordinates / points
    c = mean(P,2); % mean/ central point
    d = P-c ; % vectors connecting the central point and the given points

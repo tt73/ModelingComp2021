@@ -4,7 +4,7 @@ m = length(routing); % number of workers
 colors = distinguishable_colors(m);
 tour_length = zeros(m,1);
 
-f = figure
+f = figure;
 
 for i = 1:m   
    x = [0, coords(1,routing{i}), 0];
@@ -38,7 +38,7 @@ title('Length of each Route')
 p = f.Position;
 p(3) = 2*p(3); 
 p(4) = 1.2*p(4);
-set(f,'position',p)
+set(f,'position',p);
 
 
 end

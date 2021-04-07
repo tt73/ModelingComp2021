@@ -3,20 +3,57 @@
 
 load_settings;
 
-%% Choose number of workers
-% 
+% Option to make video
+make_video = false;
 
-minM = 4; 
-maxM = num_customers;
-M = minM:maxM;
-costs = zeros(maxM-minM+1,1);
-for i = 1:length(costs)
-   workers = Worker(M(i));
-   [~,routing] = build_sched_scatter(workers,customers,vel,mst);
-    costs(i) = compute_deterministic_cost(routing,customers,vel,mst,worker_hire_cost,worker_travel_rate,worker_OT_rate,standard_service_hours);
+%% Choose number of workers
+%
+
+% % minM = 4; 
+% % maxM = num_customers;
+% % M = minM:maxM;
+% % costs = zeros(maxM-minM+1,1);
+% % for i = 1:length(costs)
+% %    workers = Worker(M(i));
+% %    [~,routing] = build_sched_scatter(workers,customers,Param);
+% %     costs(i) = compute_deterministic_cost(routing,customers,Param,Cost);
+% % end
+% % [~,ind] = min(costs);
+% % num_workers = M(ind); % choose m with lowest deterministic cost 
+
+num_workers = ceil(num_customers/3);
+fprintf('Optimal number of workers = %d\n',num_workers)
+
+%% Build the routing plan 
+% 
+workers = Worker(num_workers);
+[arrival_times,routing] = build_sched_scatter(workers,customers,Param);
+plot_routing(routing,[customers.pos],gridsize)
+
+%% Determine a schedule buffer time 
+
+dmin = -20;
+dmax = 20;
+deltas = dmin:5:dmax;
+num_runs = 5;
+costs = deltas*0;
+get_cost =@(d) compute_stochastic_cost(d,workers,customers,Param,Cost,arrival_times,routing);
+for i = 1:length(deltas)
+   % run a stochastic simulation 
+   J = 0;
+   for j = 1:num_runs
+      J = J + get_cost(deltas(i));
+   end
+   % save the average cost 
+   costs(i) = J/num_runs;
 end
 [~,ind] = min(costs);
-num_workers = M(ind);
+delta = deltas(ind);
+fprintf('Optimal buffer time = %f\n',delta)
+
+for i = 1:num_customers
+   customers(i).scheduled_time = floor(arrival_times(i)) + delta;
+end
 
 %% Begin Computation of cost
 %
@@ -26,31 +63,10 @@ num_workers = M(ind);
 % drive this simulation 1) service times 2) travel velocity and 3) customer
 % cancellation.
 
-% Option to make video
-make_video = false;
-
-%% Start
-
-% Generate array of workers.
-workers = Worker(num_workers);
-
-% Build a schedule (appointment for customers) specifically for the
-% quadrant model. The appointment times are chosen to be the average
-% arrival time of the workers assuming nobody cancels.
-[arrival_times,routing] = build_sched_scatter(workers,customers,vel,mst);
-plot_routing(routing,[customers.pos],gridsize)
-
-
-% Give out the appointment 
-delta = zeros(1,num_customers); % buffer time > 0
-for i = 1:num_customers
-   customers(i).scheduled_time = floor(arrival_times(i)) + delta(i);
-end
-
 % Simulate cancellation.
 cancels = [];
 for i = 1:num_customers
-   if (rand < chance)
+   if (rand < Param.c)
       customers(i).status = 4;
       cancels = [cancels, i];
    end
@@ -84,8 +100,7 @@ while (~simulation_done)
    % There will be some noise in the speed due to traffic.
    for w = 1:num_workers
       if (workers(w).status == 0)
-         %          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
-         workers(w) = choose_dest_and_speed(workers(w),customers,vel);
+         workers(w) = choose_dest_and_speed(workers(w),customers,worker_vel);
       end
    end
    
@@ -163,8 +178,6 @@ end
 %% Compute Cost
 
 % call function
-[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, worker_hire_cost, ...
-   customer_wait_rate, worker_idle_rate, worker_travel_rate, ...
-   worker_OT_rate, standard_service_hours, true);
-
-total_cost = jm + ji + jw + jt + jo
+[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, Cost, true);
+total_cost = jm + ji + jw + jt + jo;
+disp(total_cost)

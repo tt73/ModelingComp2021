@@ -1,4 +1,4 @@
-function [arrival_times, routing] = build_sched_scatter(workers,customers,vel,AST)
+function [arrival_times, routing] = build_sched_scatter(workers,customers,param_obj)
 % Compute the time at a worker arrives at a customers' house using the
 % average velocity and average service time. 
 
@@ -10,7 +10,7 @@ routing = cell(m,1);
 c_pos = [customers.pos]; % 2 by n array of positions
 
 t = 0;
-dt = 0.5;
+dt = 1;
 while (~all(arrival_times))
    
    % assign a job to workers among customers unaccounted for
@@ -18,11 +18,11 @@ while (~all(arrival_times))
       for w = 1:m
          if (workers(w).status == 0)
             dists = vecnorm(c_pos-workers(w).pos);
-            [val, ind] = min(dists);
+            [~, ind] = min(dists);
             workers(w).dest = c_pos(:,ind);
             workers(w).curtask = ind;
             accounted(ind) = 1;
-            workers(w).curvel = vel;
+            workers(w).curvel = param_obj.vel;
             workers(w).status = 1;
             c_pos(:,ind) = inf;
             routing{w} = [routing{w}, ind];
@@ -49,7 +49,7 @@ while (~all(arrival_times))
          % Case 3: work for average service time (AST) minutes
          case 3
             workers(w).worktime = workers(w).worktime + dt;
-            if (workers(w).worktime >= AST)
+            if (workers(w).worktime >= param_obj.mst)
                workers(w).status = 0;
                workers(w).worktime = 0;
             end

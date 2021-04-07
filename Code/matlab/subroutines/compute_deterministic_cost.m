@@ -1,4 +1,4 @@
-function J = compute_deterministic_cost(routing, customers, vel, mst, pm, pt, po, L)
+function J = compute_deterministic_cost(routing, customers, param_obj, cost_obj)
 % routing    = (num_workers,1) cell of arrays containing indeces of customers
 % customers  = (num_customers,1) array of customers 
 % vel        = (scalar) speed (km/min) of worker
@@ -7,6 +7,13 @@ function J = compute_deterministic_cost(routing, customers, vel, mst, pm, pt, po
 % pt         = (scalar) cost per km of traveling
 % po         = (scalar) cost per min for overtime 
 % L          = (scalar) number of hours in a workday 
+
+vel = param_obj.vel; 
+mst = param_obj.mst;
+pm = cost_obj.pm;
+pt = cost_obj.pt;
+po = cost_obj.po;
+L = cost_obj.L;
 
 m = length(routing);
 pos = [customers.pos];

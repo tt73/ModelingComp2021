@@ -1,63 +1,26 @@
-%%
-% Written by Tada, Jimmie 
-%
-% This is the simulation which uses the differential evolution to compute
-% the optimal routing and number of workers at the same time. 
+function [cost] = compute_stochastic_cost(delta,workers,customers,param_obj,cost_obj,arrival_times,routing)
 
-load_settings;
+num_workers = length(workers);
+vel = param_obj.vel;
 
-% Option to make video
-make_video = true;
-
-%% Choose number of workers and the routing 
-
-minND=7; 
-maxND=15; 
-w=0.9; % 0 < w < 1, 
-[num_workers,sector_angles] = DetermineWorkers(customers,minND,maxND,w,true);
-
-% Generate array of workers.
-workers = Worker(num_workers);
-
-% Build a schedule (appointment for customers) specifically for the
-% quadrant model. The appointment times are chosen to be the average
-% arrival time of the workers assuming nobody cancels.
-
-
-[arrival_times,routing] = build_sched_scatter(sector_angles,workers,customers,vel,mst);
-plot_routing(routing,[customers.pos],gridsize)
-
-
-% Give out the appointment 
-delta = zeros(1,num_customers); % buffer time > 0
+% schdule a time with buffer 
+num_customers = length(customers);
 for i = 1:num_customers
-   customers(i).scheduled_time = floor(arrival_times(i)) + delta(i);
+   customers(i).scheduled_time = floor(arrival_times(i)) + delta;
 end
 
 % Simulate cancellation.
 cancels = [];
 for i = 1:num_customers
-   if (rand < chance)
+   if (rand < param_obj.c)
       customers(i).status = 4;
       cancels = [cancels, i];
    end
 end
-disp("cancellations:")
-disp(cancels)
 
 % Assign routes.
 for i = 1:num_workers
    workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
-end
-
-% Initialize movie with a plot
-if(make_video)
-   figure
-   plot(0,0,'ro','MarkerFaceColor','r')
-   set(gca,'nextplot','replacechildren');
-   v = VideoWriter('scatter.mp4','MPEG-4');
-   set(gcf,'color','w');
-   open(v);
 end
 
 % Loop variables
@@ -122,36 +85,10 @@ while (~simulation_done)
    
    simulation_done = check_workers(num_workers,workers);
    t = t + dt;
-   
-   if (make_video && mod(t,1)==0)
-      % plot HQ - (this will delete the previous plot)
-      plot(0,0,'ro','MarkerFaceColor','r')
-      plot_customers(num_customers,customers)
-      plot_workers(num_workers,workers)
-
-      % take the plot, and save it
-      title(sprintf('Time = %.3f (min)',t))
-      axis([-gridsize/2, gridsize/2, -gridsize/2, gridsize/2])
-      axis('square')
-      set(gcf,'position',[0,0,800,750])
-      set(gcf,'color','w');
-      set(gca,'color',[.4 .4 .4]);
-      xlabel('x (km)')
-      ylabel('y (km)')
-      frame = getframe(gcf);
-      writeVideo(v,frame);
-   end
 end
 
-if(make_video)
-   close(v);
+[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj);
+
+cost = jm + ji + jw + jt + jo;
 end
 
-%% Compute Cost
-
-% call function
-[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, worker_hire_cost, ...
-   customer_wait_rate, worker_idle_rate, worker_travel_rate, ...
-   worker_OT_rate, standard_service_hours, true);
-
-total_cost = jm + ji + jw + jt + jo

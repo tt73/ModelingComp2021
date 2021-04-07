@@ -1,7 +1,7 @@
 %%
 % Written by Jimmie
 %
-function num_workers = DetermineWorkers(customers,minND,maxND,w,plots)
+function [num_workers,sector_angles] = DetermineWorkers(customers,minND,maxND,w,plots)
 
 % these differential evolution parameters are fixed
 DEParams.F = 0.6;
@@ -42,8 +42,10 @@ for j = minND:maxND
    optimizer(1:j,j-minND+1) = optimizers(:,optind);
 end
 
-jj = find(min(lastcost)==lastcost); % index of lowest cost
+% jj = find(min(lastcost)==lastcost); % index of lowest cost
+[~,jj] = min(lastcost);
 
 lastoptimizer = optimizer(1:minND+jj-1,jj);
 
 [~,num_workers] = sectorObjective(lastoptimizer,customers,w,plots);
+sector_angles = lastoptimizer;
