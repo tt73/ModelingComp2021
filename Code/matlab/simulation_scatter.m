@@ -9,20 +9,7 @@ make_video = false;
 %% Choose number of workers
 %
 
-% % minM = 4; 
-% % maxM = num_customers;
-% % M = minM:maxM;
-% % costs = zeros(maxM-minM+1,1);
-% % for i = 1:length(costs)
-% %    workers = Worker(M(i));
-% %    [~,routing] = build_sched_scatter(workers,customers,Param);
-% %     costs(i) = compute_deterministic_cost(routing,customers,Param,Cost);
-% % end
-% % [~,ind] = min(costs);
-% % num_workers = M(ind); % choose m with lowest deterministic cost 
-
 num_workers = ceil(num_customers/3);
-fprintf('Optimal number of workers = %d\n',num_workers)
 
 %% Build the routing plan 
 % 

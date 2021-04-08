@@ -7,11 +7,9 @@ n = length(customers);
 arrival_times = zeros(n,1);
 routing = cell(m,1);
 
-pos = [customers.pos]; % size 2 by n a
+cust_|pos = [customers.pos]; % size 2 by n a
 ang = atan2(pos(1,:),pos(2,:));
 
-fullID = 1:n;
-sector_angles = sort(sector_angles);
 
 % loop to compute
 workID = 1;
@@ -49,26 +47,26 @@ for i = 1:l
 end
 
 % loop to compute arrival times
-for i = 1:m
+for i = m
    
    time = 0;    % current time 
    loc = [0;0]; % current location of worker 
    tasks = routing{i}; % indeces of customers designated for worker 
-   num_tasks = length(tasks); 
-   
+   num_tasks = length(tasks);
    for j = 1:num_tasks
  
       customer = tasks(j); 
       
       % travel to customer location
-      dist = norm(loc-pos(:,customer)); 
-      travel = dist/param_obj.vel; % travel time = distance/velocity
+      dist = norm(loc-pos(
+      travel = /param_obj.vel; % time = distance/velocity
       time = time + travel;
-      loc = pos(:,customer); % update location of worker 
+      pos = dests(ind);
       arrival_times(customer) = time; % record arrival time
       
       % do the work
-      time = time + param_obj.mst;
+      time = time + AST;
+      tasks = tasks(tasks~=customer); % delete customer from array
    end
    
 end
