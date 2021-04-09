@@ -39,7 +39,7 @@ delta = deltas(ind);
 fprintf('Optimal buffer time = %f\n',delta)
 
 for i = 1:num_customers
-   customers(i).scheduled_time = floor(arrival_times(i)) + delta;
+   customers(i).scheduled_time = max(floor(arrival_times(i)) + delta,0);
 end
 
 %% Begin Computation of cost

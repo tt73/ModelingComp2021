@@ -47,11 +47,6 @@ classdef Worker
       function obj = choose_dest_and_speed(obj,customers,vel)
          assert(obj.status == 0);
          if (~isempty(obj.tasks))
-%             dests = [customers(obj.tasks).pos];
-%             dists = vecnorm(dests-obj.pos);
-%             [val, ind] = min(dists);            
-%             obj.dest = dests(:,ind);
-%             obj.curtask = obj.tasks(ind);
             obj.curtask = obj.tasks(1);
             obj.dest = customers(obj.curtask).pos;
          else
@@ -64,8 +59,8 @@ classdef Worker
       
       function [obj,reached] = move(obj,dt) % move to destination
          assert(obj.status==1);
-         d = obj.dest - obj.pos; % direction of movement
-         d = d/norm(d);    % normalize
+         path = obj.dest - obj.pos; % direction of movement
+         d = path/norm(path);    % d = normalized vector
          obj.pos = obj.pos + d*obj.curvel*dt; % new position
          obj.drivetime = obj.drivetime + dt;
          
@@ -75,6 +70,8 @@ classdef Worker
          if (norm(obj.dest-obj.pos)<10e-8)
             reached = true;
          elseif(p(1)/d(1)>0 && p(2)/d(2)>0)
+            reached = true;
+         elseif(path==0)
             reached = true;
          end
          
@@ -124,7 +121,6 @@ classdef Worker
             obj.status = 0; % change status to idle
             obj.total_worktime = obj.total_worktime + obj.worktime;
             obj.worktime = 0;
-%             obj.tasks = obj.tasks(obj.tasks~= obj.curtask);
             obj.tasks = obj.tasks(2:end); % just remove 
          end
       end

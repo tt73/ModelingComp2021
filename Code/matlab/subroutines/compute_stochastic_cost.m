@@ -1,4 +1,4 @@
-function [cost] = compute_stochastic_cost(delta,workers,customers,param_obj,cost_obj,arrival_times,routing)
+function cost = compute_stochastic_cost(delta,workers,customers,param_obj,cost_obj,arrival_times,routing)
 
 num_workers = length(workers);
 vel = param_obj.vel;
@@ -6,7 +6,7 @@ vel = param_obj.vel;
 % schdule a time with buffer 
 num_customers = length(customers);
 for i = 1:num_customers
-   customers(i).scheduled_time = floor(arrival_times(i)) + delta;
+   customers(i).scheduled_time = max(floor(arrival_times(i)) + delta,0);
 end
 
 % Simulate cancellation.
@@ -25,7 +25,7 @@ end
 
 % Loop variables
 t = 0;
-dt = .5; % time increment 
+dt = 1.0; % time increment 
 simulation_done = false;
 
 while (~simulation_done)
@@ -34,7 +34,6 @@ while (~simulation_done)
    % There will be some noise in the speed due to traffic.
    for w = 1:num_workers
       if (workers(w).status == 0)
-         %          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
          workers(w) = choose_dest_and_speed(workers(w),customers,vel);
       end
    end
@@ -80,11 +79,17 @@ while (~simulation_done)
             if (finished)
                customers(workers(w).curtask).status = 3;
             end
+         case 4
+            % nothing
       end
    end
    
    simulation_done = check_workers(num_workers,workers);
    t = t + dt;
+   
+   if (t > 6000) 
+      warning('Might be stuck in inf loop in compute_stochastic_cost')
+   end
 end
 
 [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj);

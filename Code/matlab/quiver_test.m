@@ -6,9 +6,9 @@ load_settings;
 num_workers = num_customers/2;
 workers = Worker(num_workers);
 
-[arrival_times,routing] = build_sched_scatter(workers,customers,vel,mst);
+[arrival_times,routing] = build_sched_scatter(workers,customers,Param);
 
-L = gridsize 
+L = gridsize;
 figure
 
 m = length(routing); % number of workers 

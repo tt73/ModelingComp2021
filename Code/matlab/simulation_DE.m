@@ -7,7 +7,7 @@
 load_settings;
 
 % Option to make video
-make_video = true;
+make_video = false;
 
 %% Choose number of workers and the routing 
 
@@ -26,21 +26,30 @@ workers = Worker(num_workers);
 [arrival_times,routing] = build_sched_DE(sector_angles,workers,customers,Param);
 plot_routing(routing,[customers.pos],gridsize)
 
-%% Find buffer time 
-dmin = -20;
-dmax = 20;
-deltas = dmin:5:dmax;
-num_runs = 5;
-costs = deltas*0;
-get_cost =@(d) compute_stochastic_cost(d,workers,customers,Param,Cost,arrival_times,routing);
-for i = 1:length(deltas)
-   % run a stochastic simulation 
-   J = 0;
-   for j = 1:num_runs
-      J = J + get_cost(deltas(i));
-   end
-   % save the average cost 
-   costs(i) = J/num_runs;
+%% Find buffer time
+
+% number of runs needs to be high for our result to be stat. significant
+num_runs = 10;
+
+% searches for buffer times in the initial interval [-l,l]
+l = 20;
+
+% gets the stochastic scheduling cost
+J = @(d)getSchedulingCost(d,workers,customers,...
+    Param,Cost,arrival_times,routing,num_runs);
+
+% sets the relevant Diffevo parameters. CR,F,NP are algorithm specific
+% Nmax is number of iterations, and ND is number of dimensions (just 1 :] )
+DEparams.ND=1;DEparams.CR=0.9;DEparams.F=0.6;
+DEparams.NP=10;DEparams.Nmax=10;
+
+% the final generation of optimal deltas
+deltas=diffevoDelta(J,l,DEparams);
+
+% find the best delta among the deltas
+costs=zeros(1,DEparams.NP);
+for i=1:DEparams.NP
+    costs(i)=J(deltas(i));
 end
 [~,ind] = min(costs);
 delta = deltas(ind);
@@ -49,7 +58,7 @@ fprintf('Optimal buffer time = %f\n',delta)
 %% Give out the appointment 
 delta = 0; % buffer time > 0
 for i = 1:num_customers
-   customers(i).scheduled_time = floor(arrival_times(i)) + delta;
+   customers(i).scheduled_time = max(floor(arrival_times(i)) + delta,0);
 end
 
 %% Simulate cancellation.
