@@ -13,9 +13,8 @@ function [pop,costs] = diffevoDelta(f,l,DEparams)
 
 %Initialize a population of candidate minimizers from the intervals [-l,l]
 pop = zeros(DEparams.ND,DEparams.NP);
-
-for i = 1:DEparams.NP
-   for j = 1:DEparams.ND
+for j = 1:DEparams.ND
+   for i = 1:DEparams.NP
       pop(j,i)=(l(j)*(2*rand-1)); % pop(:,i) is one agent
    end
 end
@@ -59,7 +58,8 @@ while counter < DEparams.Nmax
       
    end
    
-   counter = counter + 1;
+   %Update
+   counter=counter+1;
 end
 
 costs = fpop;

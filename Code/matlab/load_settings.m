@@ -5,6 +5,9 @@ clear
 
 %% Define parameters
 
+% fix seed for rng
+rng(0)
+
 % total widgh of simulation square grid
 gridsize = 50; % km
 
@@ -27,7 +30,7 @@ cancel_prob = 0.05;
 worker_hire_cost = 100;       % pm  
 customer_wait_rate = rand*10; % pw
 worker_idle_rate = rand*5;    % pi 
-worker_travel_rate = 1;     % pt 
+worker_travel_rate = 1;       % pt 
 worker_OT_rate = 1.5*worker_idle_rate; % po
 
 %% Create objects
@@ -52,7 +55,7 @@ Cost.L = standard_service_hours;
 %% Generate Customers
 
 % customer parameters
-num_customers = 30;  % number of customers
+num_customers = 20;  % number of customers
 
 % generate an array of workers
 customers = Customer(gridsize,num_customers,mean_service_time,std_service_time);

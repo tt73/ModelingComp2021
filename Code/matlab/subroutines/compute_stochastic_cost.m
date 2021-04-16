@@ -1,4 +1,6 @@
-function cost = compute_stochastic_cost(delta,workers,customers,param_obj,cost_obj,arrival_times,routing)
+function cost = compute_stochastic_cost(deltas,workers,customers,param_obj,cost_obj,arrival_times,routing)
+tic
+cost = inf;
 
 num_workers = length(workers);
 vel = param_obj.vel;
@@ -6,7 +8,7 @@ vel = param_obj.vel;
 % schdule a time with buffer 
 num_customers = length(customers);
 for i = 1:num_customers
-   customers(i).scheduled_time = max(floor(arrival_times(i)) + delta,0);
+   customers(i).scheduled_time = max(floor(arrival_times(i)) + deltas(i),0);
 end
 
 % Simulate cancellation.

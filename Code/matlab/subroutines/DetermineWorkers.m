@@ -1,51 +1,52 @@
 %%
 % Written by Jimmie
 %
-function [num_workers,sector_angles] = DetermineWorkers(customers,minND,maxND,w,plots)
+function [num_workers,sector_angles] = DetermineWorkers(customers,minND,maxND,w,plots,param_obj,cost_obj)
 
 % these differential evolution parameters are fixed
-DEParams.F = 0.6;
-DEParams.CR = 0.9;
-DEParams.NP = 70;
-DEParams.Nmax = 50;
+DEParams.F = 0.8; % (default 0.8) 
+DEParams.CR = 0.9; % (default 0.9)
+DEParams.NP = 100;  % (default n*10)
+DEParams.Nmax = 50; 
 
-J =@(x) sectorObjective(x,customers,w,false); % function handle
+J =@(x) sectorObjective(x,customers,false,param_obj,cost_obj); % function handle
 
-optimizer = zeros(maxND,maxND-minND+1);
-lastcost = zeros(1,maxND-minND+1);
+NDs = minND:maxND;
+num_ND = length(NDs);
+optimizer = cell(num_ND,1);
+lastcost = zeros(num_ND,1);
 
-for j = minND:maxND
+% Vary the number of sectors. 
+% For each number, do DE and get the best
+for j = 1:num_ND
    
+   % ND = dimension of cost input x 
    % ND = number of sectors
-   DEParams.ND = j; % ND is an integer ranging from minND to maxND
+   DEParams.ND = NDs(j); 
    
-   % The array l is a discretization from -π to π,
-   % so l = -pi:2*pi/ND:pi
-   l = zeros(1,DEParams.ND);
-   for i = 1:DEParams.ND
-      l(i) = 2*(i-1)/DEParams.ND*pi-pi; % (2πi)/ND - π
-   end
+   % The array l is a discretization from -π to π   
+   dt = 2*pi/DEParams.ND;
+   l = -pi:dt:pi-dt;
    
-   optimizers = diffevoAngles(J,l,DEParams); % ????
+   % Get the evolved population
+   % Also get the cost of each col and the variance
+   [pop,costs,tour_vars] = diffevoAngles2(J,l,DEParams); 
    
-   % Compute the cost NP number of times
-   cost = zeros(1,DEParams.NP);
-   for i = 1:DEParams.NP
-      cost(i) = J(optimizers(:,i));
-   end
    
-   % [~,optind] = min(cost);
-   optind = find(cost==min(cost)); % index of lowest cost
-   optind = optind(1); % in case multiple minimums are found  
+   % Weight the cost and the variance
+   costs = costs/norm(costs);
+   vars = tour_vars/norm(tour_vars);
+   weighted = w*vars + (1-w)*costs;
    
-   lastcost(j-minND+1) = cost(optind);
-   optimizer(1:j,j-minND+1) = optimizers(:,optind);
+   [~,optind] = min(weighted);
+   
+   lastcost(j) = weighted(optind);
+   optimizer{j} = pop(:,optind);
 end
 
-% jj = find(min(lastcost)==lastcost); % index of lowest cost
 [~,jj] = min(lastcost);
 
-lastoptimizer = optimizer(1:minND+jj-1,jj);
+lastoptimizer = optimizer{jj};
 
-[~,num_workers] = sectorObjective(lastoptimizer,customers,w,plots);
+[~,num_workers] = sectorObjective(lastoptimizer,customers,plots,param_obj,cost_obj);
 sector_angles = lastoptimizer;

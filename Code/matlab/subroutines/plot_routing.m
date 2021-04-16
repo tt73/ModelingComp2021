@@ -12,7 +12,7 @@ for i = 1:m
    u = x(2:end) - x(1:end-1);
    v = y(2:end) - y(1:end-1);
    
-   tour_length(i) = sqrt(sum( u.^2 + v.^2 ));
+   tour_length(i) = sum(sqrt(( u.^2 + v.^2 )));
    
    % left graph 
    subplot(121), hold on
@@ -39,7 +39,6 @@ p = f.Position;
 p(3) = 2*p(3); 
 p(4) = 1.2*p(4);
 set(f,'position',p);
-
 
 end
 

@@ -8,7 +8,7 @@ arrival_times = zeros(n,1);
 routing = cell(m,1);
 
 pos = [customers.pos]; % size 2 by n a
-ang = atan2(pos(1,:),pos(2,:));
+ang = atan2(pos(2,:),pos(1,:));
 
 fullID = 1:n;
 sector_angles = sort(sector_angles);
@@ -17,10 +17,12 @@ sector_angles = sort(sector_angles);
 workID = 1;
 for i = 1:l
    % Get a mask (bool array) for all customers in current sector
-   try
-      sectorindex = (sector_angles(i)<ang) & (ang<sector_angles(i+1));
-   catch
-      sectorindex = (sector_angles(i)<ang) | (ang<sector_angles(1));
+   if i==l
+      % last sector
+      sectorindex = (sector_angles(i)<ang) | (ang<sector_angles(1)); 
+   else
+      % all other sectors
+      sectorindex = (sector_angles(i)<ang) & (ang<sector_angles(i+1)); 
    end
    
    % index of customers in the sector
