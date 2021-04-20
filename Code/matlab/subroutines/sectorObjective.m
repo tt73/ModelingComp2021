@@ -1,17 +1,19 @@
 %%
-% Written by Jimmie 
+% Written by Jimmie, Tada 
 %
-function [J,numworkers,tour_var] = sectorObjective(testangle,customers,make_plots,param_obj,cost_obj)
-% pass cost object 
-% routing (numworker by 1) cell array 
+function [det_cost,tour_var] = sectorObjective(testangle,customers,param_obj,cost_obj)
+% testangle = array of angles that divide the 2D cartesian grid 
+% customers = array of customers
+% param_obj = structure with fields containing problem parameters
+% cost_obj  = structure with fields containing cost-related parameters 
 
 numsects = length(testangle);
-J = 0;
+det_cost = 0;
 N = max(size(customers));
 
 % Test if any angles fall outside the allowed limits
 if(any(testangle>pi) || any(testangle<-pi))
-   J = inf;
+   det_cost = inf;
    numworkers = nan;
    tour_var = nan;
    return
@@ -31,9 +33,6 @@ for i=1:N
    pos(i,:) = tempcust.pos;
 end
 
-if make_plots % plot all customers as * 
-   figure, plot(pos(:,1),pos(:,2),'*'), hold on
-end
 
 testangle = sort(testangle); % this is crucial 
 
@@ -62,12 +61,6 @@ for i=1:numsects
    [~, idx] = sort(th);   % sorting the angles
    P = P(:,idx); % sorting the given points
    P = [P P(:,1)]; % add the first at the end to close the polygon
-   
-    
-   if make_plots
-      plot( P(1,:), P(2,:), '.-r')
-   end
-   
 
    [~,n] = size(P);
    for j = 1:n-1
@@ -78,16 +71,17 @@ end
 nonzeroindices=find(metrics~=0);
 perim = metrics(nonzeroindices); % length of the tour 
 numworkers = length(perim); 
-
-tour_var = var(perim);
+% tour_var = var(perim);
 
 % Add cost based on hiring 
-J = J + numworkers*cost_obj.pm;
+det_cost = det_cost + numworkers*cost_obj.pm;
 
 % Add cost based on traveling 
-J = J + sum(perim)*cost_obj.pt;
+det_cost = det_cost + sum(perim)*cost_obj.pt;
 
 % Add cost based on overtime 
 tour_duration = perim/param_obj.vel + num_jobs(nonzeroindices)*param_obj.mst;
 overtime = cost_obj.L*60; % number of hours * 60 min 
-J = J + sum( (tour_duration - overtime).*(tour_duration > overtime)*cost_obj.po); 
+det_cost = det_cost + sum( (tour_duration - overtime).*(tour_duration > overtime)*cost_obj.po);
+
+tour_var = var(tour_duration);

@@ -1,23 +1,22 @@
-function [arrival_times, routing] = build_sched_DE(sector_angles,workers,customers,param_obj)
+function [arrival_times, routing, num_workers] = build_sched_DE(sector_angles,customers,param_obj)
 
-l = length(sector_angles);
-m = length(workers);
-n = length(customers);
+num_sec = length(sector_angles);
+num_cus = length(customers);
 
-arrival_times = zeros(n,1);
-routing = cell(m,1);
+arrival_times = zeros(num_cus,1);
+routing = cell(num_sec,1);
 
 pos = [customers.pos]; % size 2 by n a
 ang = atan2(pos(2,:),pos(1,:));
 
-fullID = 1:n;
+fullID = 1:num_cus;
 sector_angles = sort(sector_angles);
 
 % loop to compute
-workID = 1;
-for i = 1:l
+worker_ID = 1;
+for i = 1:num_sec
    % Get a mask (bool array) for all customers in current sector
-   if i==l
+   if i==num_sec
       % last sector
       sectorindex = (sector_angles(i)<ang) | (ang<sector_angles(1)); 
    else
@@ -46,12 +45,20 @@ for i = 1:l
    
    % Save the ordered index of customers
    ordered = localID(idxs(2:end)-1);
-   routing{workID} = ordered;
-   workID = workID + 1;
+   routing{worker_ID} = ordered;
+   worker_ID = worker_ID + 1;
+end
+
+% set the number of workers to the final worker index 
+num_workers = worker_ID-1;
+
+% delete cells if 
+if (num_sec > num_workers)
+   routing(num_workers+1:end) = []; 
 end
 
 % loop to compute arrival times
-for i = 1:m
+for i = 1:num_workers
    
    time = 0;    % current time 
    loc = [0;0]; % current location of worker 

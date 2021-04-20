@@ -6,7 +6,7 @@ clear
 %% Define parameters
 
 % fix seed for rng
-rng(0)
+rng(3)
 
 % total widgh of simulation square grid
 gridsize = 50; % km
@@ -55,7 +55,18 @@ Cost.L = standard_service_hours;
 %% Generate Customers
 
 % customer parameters
-num_customers = 20;  % number of customers
+num_customers = 30;  % number of customers
 
 % generate an array of workers
 customers = Customer(gridsize,num_customers,mean_service_time,std_service_time);
+
+%% Simulate cancellation.
+cancels = [];
+for i = 1:num_customers
+   if (rand < Param.c)
+      customers(i).status = 4;
+      cancels = [cancels, i];
+   end
+end
+disp("cancellations:")
+disp(cancels)

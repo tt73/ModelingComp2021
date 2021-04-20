@@ -1,6 +1,6 @@
 function cost = compute_stochastic_cost(deltas,workers,customers,param_obj,cost_obj,arrival_times,routing)
 % need to fix this 
-% the service time for each customer should be regenerated each instance
+% the service time for each customer should be regenerated each i
 
 tic
 cost = inf;

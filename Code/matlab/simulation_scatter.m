@@ -28,8 +28,9 @@ get_cost =@(d) compute_stochastic_cost(d,workers,customers,Param,Cost,arrival_ti
 for i = 1:length(deltas)
    % run a stochastic simulation 
    J = 0;
+   d = deltas(i)*ones(num_customers,1);
    for j = 1:num_runs
-      J = J + get_cost(deltas(i));
+      J = J + get_cost(d);
    end
    % save the average cost 
    costs(i) = J/num_runs;
@@ -49,17 +50,6 @@ end
 % service times for each customer is also fixed. The key randomness that
 % drive this simulation 1) service times 2) travel velocity and 3) customer
 % cancellation.
-
-% Simulate cancellation.
-cancels = [];
-for i = 1:num_customers
-   if (rand < Param.c)
-      customers(i).status = 4;
-      cancels = [cancels, i];
-   end
-end
-disp("cancellations:")
-disp(cancels)
 
 % Assign routes.
 for i = 1:num_workers
@@ -167,4 +157,4 @@ end
 % call function
 [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, Cost, true);
 total_cost = jm + ji + jw + jt + jo;
-disp(total_cost)
+fprintf('Total Cost = %10.2f\n',total_cost)

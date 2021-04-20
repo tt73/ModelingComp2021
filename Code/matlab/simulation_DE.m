@@ -7,32 +7,38 @@
 load_settings;
 
 % Option to make video
-make_video = true;
+make_video = false;
 
 %% Choose number of workers and the routing 
 
-minND = floor(num_customers/4); 
-maxND = floor(num_customers*3/4); 
-w = 0.85; % 0 < w < 1, 
-[num_workers,sector_angles] = DetermineWorkers(customers,minND,maxND,w,true,Param,Cost);
+minND = floor(num_customers/5); 
+maxND = floor(num_customers*3/4);
+N_best = 10;
+w = 0.5; % 0 < w < 1, 
+finalists = DetermineSectors(customers,minND,maxND,w,Param,Cost,N_best);
 
-% Generate array of workers.
-workers = Worker(num_workers);
+% plot the N best sector results
+for i = 1:N_best
+   figure(i)
+   [~,routing,~] = build_sched_DE(finalists{i},customers,Param);
+   plot_routing(routing,[customers.pos],gridsize)
+end
 
 %% Build a schedule (appointment for customers) specifically for the
 % quadrant model. The appointment times are chosen to be the average
 % arrival time of the workers assuming nobody cancels.
 
-[arrival_times,routing] = build_sched_DE(sector_angles,workers,customers,Param);
-plot_routing(routing,[customers.pos],gridsize)
 
+% Generate array of workers.
+[arrival_times,routing,num_workers] = build_sched_DE(finalists{1},customers,Param);
+workers = Worker(num_workers);
 
 %% Find buffer time
 % 
-num_runs = 2;
+num_runs = 30; % choose high num_runs if cancellation rate is high   
 
 % searches for buffer times in the initial interval [-l,l]
-l = Param.mst*ones(num_customers,1);
+l = Param.mst*ones(num_customers,1)/2;
 
 % gets the stochastic scheduling cost
 J = @(d)getSchedulingCost(d,workers,customers,...
@@ -40,34 +46,23 @@ J = @(d)getSchedulingCost(d,workers,customers,...
 
 % sets the relevant Diffevo parameters
 DEparams.ND = num_customers;    % dimension of input
-DEparams.CR = 0.9;  % mutation probability (0,1) 
+DEparams.CR = 0.8;  % mutation probability (0,1) 
 DEparams.F = 0.6;   % mutation strength (0,2) 
 DEparams.NP = 10;   % pop size
 DEparams.Nmax = 10; % number of evolutions 
 
 % the final generation of optimal deltas
 [pop,costs] = diffevoDelta(J,l,DEparams);
-
 [~,ind] = min(costs);
 delta = pop(:,ind);
-fprintf('Optimal buffer time = %f\n',delta)
+fprintf('Optimal buffer time = %6.2f min\n',delta)
+% delta = zeros(num_customers,1);
 
 %% Give out the appointment 
 
 for i = 1:num_customers
    customers(i).scheduled_time = max(floor(arrival_times(i)) + delta(i),0);
 end
-
-%% Simulate cancellation.
-cancels = [];
-for i = 1:num_customers
-   if (rand < Param.c)
-      customers(i).status = 4;
-      cancels = [cancels, i];
-   end
-end
-disp("cancellations:")
-disp(cancels)
 
 %% Assign routes.
 for i = 1:num_workers
@@ -177,4 +172,4 @@ end
 % call function
 [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, Cost, true);
 total_cost = jm + ji + jw + jt + jo;
-disp(total_cost)
+fprintf('Total Cost = %10.2f\n',total_cost)

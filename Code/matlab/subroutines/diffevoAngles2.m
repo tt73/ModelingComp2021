@@ -1,17 +1,22 @@
 %%
 % Editted by Tada
 %
-function [pop,costs,tour_vars] = diffevoAngles2(f,l,DEparams)
+function [pop,dcosts,vcosts] = diffevoAngles2(f,l,w,DEparams)
 %Minimizes f(x) using the differential evolution algorithm
 %of Storn, Price
 
 %Inputs:
 % f = the function handle we want to minimize
 % l = input of f, its a column
+% w = weight of the variance vs deterministic cost
 % DEparams = object containing several DE options
 
 %Output:
-% pop = NP columns of candidates
+% pop         = NP columns of candidates
+% dcosts      = deterministic of candidates based on model parameters
+% vcosts      = cost based on variance of the tour lengths of each worker
+% num_workers = actual number of workers employed for each candidate
+
 
 % Initialize the population
 % Perturb all of the angles except the first one
@@ -28,11 +33,12 @@ end
 
 % Compute cost of each population
 % Compute the tour variance as well
-tour_vars = zeros(DEparams.NP,1);
-costs = zeros(DEparams.NP,1);
+% Compute the number of workers too
+vcosts = zeros(DEparams.NP,1);
+dcosts = zeros(DEparams.NP,1);
 for i=1:DEparams.NP
-   [costs(i),~,tour_vars(i)] = f(pop(:,i));
-   if(tour_vars(i)==0)
+   [dcosts(i),vcosts(i)] = f(pop(:,i));
+   if(vcosts(i)==0)
       warning('somethings off')
    end
 end
@@ -65,11 +71,12 @@ while counter<DEparams.Nmax
    end
    
    % If new agent has lower cost, then replace
-   [new_cost,~,tour_var] = f(y);
-   if (new_cost < costs(i))
-      costs(i) = new_cost;
+   % The cost is a weighted average of deterministic cost and variance.
+   [new_cost,new_var] = f(y);
+   if (w*new_var + (1-w)*new_cost < w*vcosts(i)+(1-w)*dcosts(i))
       pop(:,i) = y;
-      tour_vars(i) = tour_var;
+      dcosts(i) = new_cost;
+      vcosts(i) = new_var;
    end
    
    % Update
