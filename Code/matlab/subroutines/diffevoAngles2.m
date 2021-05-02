@@ -14,7 +14,7 @@ function [pop,dcosts,vcosts] = diffevoAngles2(f,l,w,DEparams)
 %Output:
 % pop         = NP columns of candidates
 % dcosts      = deterministic of candidates based on model parameters
-% vcosts      = cost based on variance of the tour lengths of each worker
+% vcosts      = cost based on variance of the tours
 % num_workers = actual number of workers employed for each candidate
 
 
@@ -36,10 +36,15 @@ end
 % Compute the number of workers too
 vcosts = zeros(DEparams.NP,1);
 dcosts = zeros(DEparams.NP,1);
+wcost = zeros(DEparams.NP,1);
+best = 1;
+bcost = inf;
 for i=1:DEparams.NP
    [dcosts(i),vcosts(i)] = f(pop(:,i));
-   if(vcosts(i)==0)
-      warning('somethings off')
+   wcost(i) = w*vcosts(i) + (1-w)*dcosts(i);
+   if (wcost(i) < bcost)
+      bcost = wcost(i);
+      best = i;
    end
 end
 
@@ -53,32 +58,53 @@ while counter<DEparams.Nmax
       R = randi(DEparams.ND);
       
       % Draw 3 samples from populatino w/o replacement
-      randind = randsample(DEparams.NP,3);
-      while(ismember(i,randind)) % keep sampling until i is not drawn
-         randind = randsample(DEparams.NP,3);
+      randind = randsample(DEparams.NP,4);
+      while(ismember([i,best],randind)) % keep sampling until i is not drawn
+         randind = randsample(DEparams.NP,4);
       end
-      a = pop(:,randind(1));
-      b = pop(:,randind(2));
-      c = pop(:,randind(3));
       
       % Potential Cross Over y
       y = pop(:,i);
       for j = 1:DEparams.ND
          if (rand<DEparams.CR || j==R)
-            y(j) = a(j) + DEparams.F*(b(j)-c(j));
+            a = pop(j,randind(1));
+            b = pop(j,randind(2));
+            c = pop(j,randind(3));
+            d = pop(j,randind(4));
+            y(j) = pop(j,best) + DEparams.F*(a-b) + DEparams.F*(c-d);
          end
       end
    end
    
-   % If new agent has lower cost, then replace
-   % The cost is a weighted average of deterministic cost and variance.
-   [new_cost,new_var] = f(y);
-   if (w*new_var + (1-w)*new_cost < w*vcosts(i)+(1-w)*dcosts(i))
-      pop(:,i) = y;
-      dcosts(i) = new_cost;
-      vcosts(i) = new_var;
+   % fix the mutated agent by sorting
+   y = sort(y);
+   
+   % penalize the agent if angles fall out of range
+   if(any(y>pi) || any(y<-pi))
+      continue
+   else
+      
+      % If new agent has lower cost, then replace
+      % The cost is a weighted average of deterministic cost and variance.
+      [new_dcost,new_vcost] = f(y);
+      new_cost = w*new_vcost + (1-w)*new_dcost;
+      if (new_cost < wcost(i))
+         pop(:,i) = y;
+         dcosts(i) = new_dcost;
+         vcosts(i) = new_vcost;
+         wcost(i) = new_cost;
+         if (new_cost < bcost)
+            bcost = new_cost;
+            best = i;
+         end
+      end
    end
    
    % Update
    counter = counter + 1;
+   
+   % check for convregence 
+   if (std(wcost) < DEparams.tol)
+      break
+   end
 end

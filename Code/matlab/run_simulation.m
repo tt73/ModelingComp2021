@@ -1,41 +1,18 @@
-function cost = compute_stochastic_cost(deltas,workers,customers,param_obj,cost_obj,arrival_times,routing)
-% need to fix this 
-% the service time for each customer should be regenerated each instance
+% set the seed
+rng(seed)
 
-tic
-cost = inf;
-
-num_workers = length(workers);
-vel = param_obj.vel;
-
-% schdule a time with buffer 
-num_customers = length(customers);
-for i = 1:num_customers
-   customers(i).scheduled_time = max(floor(arrival_times(i)) + deltas(i),0);
+% Initialize movie with a plot
+if(make_video)
+   figure
+   plot(0,0,'ro','MarkerFaceColor','r')
+   set(gca,'nextplot','replacechildren');
+   v = VideoWriter('DE.mp4','MPEG-4');
+   set(gcf,'color','w');
+   open(v);
 end
 
-% generate random service time for each customer
-for i = 1:num_customers
-   customers(i).service_time = normrnd(param_obj.mst,param_obj.std); % N(mst,std) 
-end
-
-% Simulate cancellation.
-cancels = [];
-for i = 1:num_customers
-   if (rand < param_obj.c)
-      customers(i).status = 4;
-      cancels = [cancels, i];
-   end
-end
-
-% Assign routes.
-for i = 1:num_workers
-   workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
-end
-
-% Loop variables
 t = 0;
-dt = 2.0; % time increment 
+dt = .5; % time increment 
 simulation_done = false;
 
 while (~simulation_done)
@@ -44,7 +21,8 @@ while (~simulation_done)
    % There will be some noise in the speed due to traffic.
    for w = 1:num_workers
       if (workers(w).status == 0)
-         workers(w) = choose_dest_and_speed(workers(w),customers,vel);
+         %          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+         workers(w) = choose_dest_and_speed(workers(w),customers,Param.vel);
       end
    end
    
@@ -89,21 +67,32 @@ while (~simulation_done)
             if (finished)
                customers(workers(w).curtask).status = 3;
             end
-         case 4
-            % nothing
       end
    end
    
    simulation_done = check_workers(num_workers,workers);
    t = t + dt;
    
-   if (t > 6000) 
-      warning('Might be stuck in inf loop in compute_stochastic_cost')
+   if (make_video && mod(t,1)==0)
+      % plot HQ - (this will delete the previous plot)
+      plot(0,0,'ro','MarkerFaceColor','r')
+      plot_customers(num_customers,customers)
+      plot_workers(num_workers,workers)
+
+      % take the plot, and save it
+      title(sprintf('Time = %.3f (min)',t))
+      axis([-gridsize/2, gridsize/2, -gridsize/2, gridsize/2])
+      axis('square')
+      set(gcf,'position',[0,0,800,750])
+      set(gcf,'color','w');
+      set(gca,'color',[.4 .4 .4]);
+      xlabel('x (km)')
+      ylabel('y (km)')
+      frame = getframe(gcf);
+      writeVideo(v,frame);
    end
 end
 
-[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj);
-
-cost = jm + ji + jw + jt + jo;
+if(make_video)
+   close(v);
 end
-

@@ -1,4 +1,4 @@
-function J = compute_deterministic_cost(routing, customers, param_obj, cost_obj)
+function [dcost, vcost] = compute_deterministic_cost(routing, customers, param_obj, cost_obj)
 % routing    = (num_workers,1) cell of arrays containing indeces of customers
 % customers  = (num_customers,1) array of customers 
 % vel        = (scalar) speed (km/min) of worker
@@ -42,8 +42,11 @@ for i = 1:m
    tour_duration(i) = tour_duration(i) + travel_time + service_time;
 end
 
-Jm = m*pm;                  % hire cost 
-Jt = sum(tour_distance)*pt; % travel cost
-Jo = sum((tour_duration>L*60).*(tour_duration-L*60))*po; % OT cost 
+Jm = pm*ones(m,1);         % hire cost 
+Jt = tour_distance*pt;     % travel cost
+Jo = ((tour_duration>L*60).*(tour_duration-L*60))*po; % OT cost
 
-J = Jm + Jt + Jo;
+J = Jm + Jt + Jo; 
+
+dcost = sum(J);
+vcost = var(J);

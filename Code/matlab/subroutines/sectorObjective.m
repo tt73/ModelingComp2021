@@ -1,42 +1,18 @@
 %%
 % Written by Jimmie, Tada 
 %
-function [det_cost,tour_var] = sectorObjective(testangle,customers,param_obj,cost_obj)
+function [dcost,vcost] = sectorObjective(testangle,customers,param_obj,cost_obj)
 % testangle = array of angles that divide the 2D cartesian grid 
 % customers = array of customers
 % param_obj = structure with fields containing problem parameters
 % cost_obj  = structure with fields containing cost-related parameters 
 
 numsects = length(testangle);
-det_cost = 0;
-N = max(size(customers));
+pos = [customers.pos]; 
+ang = atan2(pos(2,:),pos(1,:));
 
-% Test if any angles fall outside the allowed limits
-if(any(testangle>pi) || any(testangle<-pi))
-   det_cost = inf;
-   numworkers = nan;
-   tour_var = nan;
-   return
-end
-
-
-% initialize their position and relative distance arrays
-dist = zeros(N,1); % distance of each customer from the origin
-ang = zeros(N,1); % angular location of each customer (-pi to pi) 
-pos = zeros(N,2); % 
-
-% assign positions to an array
-for i=1:N
-   tempcust = customers(i);
-   dist(i) = norm(tempcust.pos,2);
-   ang(i) = atan2(tempcust.pos(2),tempcust.pos(1));
-   pos(i,:) = tempcust.pos;
-end
-
-
-testangle = sort(testangle); % this is crucial 
-
-metrics = zeros(numsects,1);
+costs = zeros(numsects,1);
+tour_distance = zeros(numsects,1);
 num_jobs = zeros(numsects,1); 
 
 for i=1:numsects
@@ -49,10 +25,13 @@ for i=1:numsects
    end
    
    num_jobs(i) = sum(sectorindex);
+   if (num_jobs==0)
+      continue
+   end
    
    % extract position of customers in sector 
-   x = pos(sectorindex,1); x = [0;x]';
-   y = pos(sectorindex,2); y = [0;y]';
+   x = [0, pos(1,sectorindex)]; 
+   y = [0, pos(2,sectorindex)]; 
    
    P = [x; y]; % coordinates / points
    c = mean(P,2); % mean/ central point
@@ -64,24 +43,23 @@ for i=1:numsects
 
    [~,n] = size(P);
    for j = 1:n-1
-      metrics(i) = metrics(i) + norm(P(:,j)-P(:,j+1),2);
+      tour_distance(i) = tour_distance(i) + norm(P(:,j)-P(:,j+1),2);
    end
 end
 
-nonzeroindices=find(metrics~=0);
-perim = metrics(nonzeroindices); % length of the tour 
-numworkers = length(perim); 
-% tour_var = var(perim);
+% exclude empty sectors 
+nonzeroindices = find(tour_distance~=0);
+tour_distance = tour_distance(nonzeroindices);
+num_jobs = num_jobs(nonzeroindices);
+tour_duration = tour_distance/param_obj.vel + num_jobs*param_obj.mst; 
 
-% Add cost based on hiring 
-det_cost = det_cost + numworkers*cost_obj.pm;
+% compute cost for each worker
+m = length(tour_distance); 
+Jm = cost_obj.pm*ones(m,1); % hire cost
+Jt = tour_distance*cost_obj.pt; % travel cost
+Jo = ((tour_duration>cost_obj.L*60).*(tour_duration-cost_obj.L*60))*cost_obj.po;
+J = Jm + Jt + Jo; % cost per worker
 
 % Add cost based on traveling 
-det_cost = det_cost + sum(perim)*cost_obj.pt;
-
-% Add cost based on overtime 
-tour_duration = perim/param_obj.vel + num_jobs(nonzeroindices)*param_obj.mst;
-overtime = cost_obj.L*60; % number of hours * 60 min 
-det_cost = det_cost + sum( (tour_duration - overtime).*(tour_duration > overtime)*cost_obj.po);
-
-tour_var = var(tour_duration);
+dcost = sum(J);
+vcost = var(J);

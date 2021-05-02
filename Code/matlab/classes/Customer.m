@@ -18,13 +18,12 @@ classdef Customer
    end
    
    methods
-      function obj = Customer(gridsize,n,mu,sigma) % this is  constructor
+      function obj = Customer(gridsize,n) % this is  constructor
          if (nargin ~= 0)
             obj(1,n) = obj;
             for i = 1:n
                obj(i).status = 0;
                obj(i).pos = gridsize*rand(2,1)-gridsize/2;
-               obj(i).service_time = normrnd(mu,sigma); 
             end
          end
       end
@@ -35,6 +34,7 @@ classdef Customer
             obj.status = 1;
          end 
       end      
+      
    end
 end
 

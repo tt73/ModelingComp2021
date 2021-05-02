@@ -7,3 +7,4 @@ get_cost =@(x) compute_stochastic_cost(x,workers,customers,Param,Cost,arrival_ti
    end
    % save the average cost
    J = J/num_runs;
+end

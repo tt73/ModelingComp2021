@@ -6,12 +6,12 @@ classdef Worker
    
    properties
       
-      % 0 = idle 
+      % 0 = idle
       % 1 = driving
       % 2 = waiting at customers house
       % 3 = working
       % 4 = done
-      status   
+      status
       pos       % [x; y] current position
       curtask   % current task
       curvel    % velocity to next destination (has +/- noise)
@@ -19,7 +19,7 @@ classdef Worker
       dest      % [x; y] location of destination
       schedule  % array of appointment times
       
-      % statistics 
+      % statistics
       drivetime % time spent driving to destination
       waittime  % time spent waiting at customer's house
       worktime  % time spent working on customer
@@ -51,28 +51,36 @@ classdef Worker
             obj.dest = customers(obj.curtask).pos;
          else
             obj.dest = [0;0]; % go back to base
-            obj.curtask = 0; % change task to zero 
+            obj.curtask = 0; % change task to zero
          end
          obj.curvel = vel + randn/5; % add some noise to speed
+         while (obj.curvel <0)
+            obj.curvel = vel + randn/5; % redo if negative
+         end
          obj.status = 1;
       end
       
       function [obj,reached] = move(obj,dt) % move to destination
          assert(obj.status==1);
-         path = obj.dest - obj.pos; % direction of movement
-         d = path/norm(path);    % d = normalized vector
-         obj.pos = obj.pos + d*obj.curvel*dt; % new position
-         obj.drivetime = obj.drivetime + dt;
          
-         reached  = false;
-         p = obj.pos - obj.dest;
-         norm(obj.dest-obj.pos);
-         if (norm(obj.dest-obj.pos)<10e-8)
+         % flag to determine if destination is reached or gone passed it
+         reached = false;
+         
+         % direction of movement
+         path = obj.dest - obj.pos;
+         mag = norm(path);
+         if (mag<1e-8)
             reached = true;
-         elseif(p(1)/d(1)>0 && p(2)/d(2)>0)
-            reached = true;
-         elseif(path==0)
-            reached = true;
+         else
+            d = path/mag; % norm
+            obj.pos = obj.pos + d*obj.curvel*dt; % new position
+            obj.drivetime = obj.drivetime + dt;
+            
+            % check if worker went beyond the destination
+            p = obj.pos - obj.dest;
+            if(p(1)/d(1)>0 && p(2)/d(2)>0)
+               reached = true;
+            end
          end
          
          if(reached)
@@ -91,7 +99,7 @@ classdef Worker
          
          % just wait until scheduled time is passed
          obj.waittime = obj.waittime + dt;
-         if (time >= scheduled_time) 
+         if (time >= scheduled_time)
             ready = true;
          else
             ready = false;
@@ -121,7 +129,7 @@ classdef Worker
             obj.status = 0; % change status to idle
             obj.total_worktime = obj.total_worktime + obj.worktime;
             obj.worktime = 0;
-            obj.tasks = obj.tasks(2:end); % just remove 
+            obj.tasks = obj.tasks(2:end); % just remove
          end
       end
       

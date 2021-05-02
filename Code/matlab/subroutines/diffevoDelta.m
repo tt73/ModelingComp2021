@@ -1,4 +1,4 @@
-function [pop,costs] = diffevoDelta(f,l,DEparams)
+function [pop,costs] = diffevoDelta(f,l,DEparams,cost_obj)
 
 %Minimizes f(x) using the differential evolution algorithm
 %of Storn, Price
@@ -11,23 +11,37 @@ function [pop,costs] = diffevoDelta(f,l,DEparams)
 
 %Output: the possible global minimizers
 
-%Initialize a population of candidate minimizers from the intervals [-l,l]
+%Initialize a population of candidate minimizers with a uniform
+%distribution over the search space. If wait cost > idle cost, then we try
+%to push the appoitment times later (buffer time > 0). If wait cost < idle
+%cost, then we move the appointment times earlier (buffer time < 0). 
 pop = zeros(DEparams.ND,DEparams.NP);
-
-for i = 1:DEparams.NP
+for i = 2:DEparams.NP % skip first member on purpose 
    for j = 1:DEparams.ND
-      pop(j,i)=(l(j)*(2*rand-1)); % pop(:,i) is one agent
+      if (cost_obj.pw > cost_obj.pi) 
+         pop(j,i)=(l(j)*(rand));
+      else
+         pop(j,i)=(l(j)*(-rand));
+      end
    end
 end
 
 
-fpop = zeros(DEparams.NP,1);
+% compute the initial cost of each member of the population 
+cost = zeros(DEparams.NP,1);
+best = 1; 
+bcost = inf;
 for i=1:DEparams.NP
-   fpop(i)=f(pop(:,i));
+   cost(i)=f(pop(:,i));
+   if(cost(i) < bcost)
+      bcost = cost(i);
+      best = i; % keep track of the best one
+   end
 end
 
 %Set DEparams.tolerance and maximum number of iterations
-counter=0; tic
+counter=0; 
+start = tic;
 while counter < DEparams.Nmax
    
    for i = 1:DEparams.NP % for each agent in pop
@@ -37,29 +51,34 @@ while counter < DEparams.Nmax
       R = randi(DEparams.ND);
       
       % Draw 3 samples from populatino w/o replacement
-      randind = randsample(DEparams.NP,3);
-      while(ismember(i,randind)) % keep sampling until i is not drawn
-         randind = randsample(DEparams.NP,3);
+      randind = randsample(DEparams.NP,2);
+      while(ismember([i,best],randind)) % keep sampling until i is not drawn
+         randind = randsample(DEparams.NP,2);
       end
-      a = pop(:,randind(1));
-      b = pop(:,randind(2));
-      c = pop(:,randind(3));
-      
+   
       for j = 1:DEparams.ND
          if (rand<DEparams.CR || j==R)
-            y(j) = a(j) + DEparams.F*(b(j)-c(j));
+            y(j) = pop(j,best) + DEparams.F*(pop(j,randind(1))-pop(j,randind(2)));
          end
       end
       
-      fCandidate = f(y);
-      if (fCandidate<fpop(i))
+      ycost = f(y);
+      if (ycost<cost(i))
          pop(:,i) = y;
-         fpop(i) = fCandidate;
+         cost(i) = ycost;
+         
+         if (ycost < bcost)
+            bcost = ycost;
+            best = i;
+         end
       end
+      
       
    end
    
+   secs = toc(start);
    counter = counter + 1;
+   fprintf('Finished %d/%d iterations in %6.2f seconds. std = %6.2f. Expected to finish in %6.2f minutes\n\r',counter,DEparams.Nmax,secs,std(cost),(DEparams.Nmax/counter-1)*secs/60)
 end
 
-costs = fpop;
+costs = cost;
