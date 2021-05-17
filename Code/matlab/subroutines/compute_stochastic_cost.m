@@ -102,8 +102,8 @@ while (~simulation_done)
    end
 end
 
-[jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj);
+[worker_cost] = compute_simulation_cost(workers, customers, cost_obj);
 
-cost = jm + ji + jw + jt + jo;
+cost = sum(sum(worker_cost));
 end
 

@@ -21,13 +21,13 @@ for i = 1:length(nws)
    [~,routing] = build_sched_scatter(workers,customers,Param);
    [dcosts(i),vcosts(i)] = compute_deterministic_cost(routing, customers, Param, Cost);
 end
-w = 0.5;
+w = 0.7;
 wcosts = w*vcosts + (1-w)*dcosts;
 [~,ind] = min(wcosts);
 num_workers = nws(ind);
 workers = Worker(num_workers);
 [arrival_times,routing] = build_sched_scatter(workers,customers,Param);
-plot_routing(routing,[customers.pos],Param)
+plot_routing(routing,[customers.pos],Param,Cost)
 
 %% Determine a schedule buffer time 
 
@@ -45,7 +45,7 @@ DEparams.ND = num_customers;    % dimension of input
 DEparams.CR = 0.9;  % mutation probability (0,1) 
 DEparams.F = 0.8;   % mutation strength (0,2) 
 DEparams.NP = 8;   % num_customers*10;   % pop size
-DEparams.Nmax = 10; % number of evolutions 
+DEparams.Nmax = 5; % number of evolutions 
 
 % the final generation of optimal deltas
 %    delta = zeros(num_customers,1);

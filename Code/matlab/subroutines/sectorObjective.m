@@ -11,7 +11,6 @@ numsects = length(testangle);
 pos = [customers.pos]; 
 ang = atan2(pos(2,:),pos(1,:));
 
-costs = zeros(numsects,1);
 tour_distance = zeros(numsects,1);
 num_jobs = zeros(numsects,1); 
 
@@ -55,11 +54,12 @@ tour_duration = tour_distance/param_obj.vel + num_jobs*param_obj.mst;
 
 % compute cost for each worker
 m = length(tour_distance); 
-Jm = cost_obj.pm*ones(m,1); % hire cost
 Jt = tour_distance*cost_obj.pt; % travel cost
 Jo = ((tour_duration>cost_obj.L*60).*(tour_duration-cost_obj.L*60))*cost_obj.po;
-J = Jm + Jt + Jo; % cost per worker
 
-% Add cost based on traveling 
-dcost = sum(J);
-vcost = var(J);
+% variance is based on only these two 
+J = Jt + Jo; 
+vcost = std(J);
+
+% dcost also has hire cost 
+dcost = sum(J) + cost_obj.pm*m;

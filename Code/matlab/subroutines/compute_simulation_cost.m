@@ -1,4 +1,4 @@
-function [jm, ji, jw, jt, jo] = compute_simulation_cost(workers, customers, cost_obj, show)
+function [worker_costs] = compute_simulation_cost(workers, customers, cost_obj, show)
 pm = cost_obj.pm;
 pw = cost_obj.pw;
 pi = cost_obj.pi;
@@ -12,47 +12,52 @@ end
 M = length(workers);
 N = length(customers);
 
-jm = M*pm;
+worker_costs = zeros(5,M);
 
-ji = 0;
-jw = 0;
-for c = 1:N
-   diff = customers(c).scheduled_time - customers(c).arrival_time;
-   if(customers(c).status ~= 4)
-      if (diff < 0) % worker arrived too late
-         jw = jw - diff;
-      else % worker arrived too early
-         ji = ji + diff;
+% 1. hire cost
+worker_costs(1,:) = pm;
+
+% 2. travel cost
+for w = 1:M
+   worker_costs(2,w) = workers(w).total_drivetime*pt;
+end
+
+% 3. waiting and
+% 4. idle cost
+for w = 1:M
+   wait = 0;
+   idle = 0;
+   jobs = workers(w).schedule;
+   for c = 1:length(jobs)
+      diff = customers(c).scheduled_time - customers(c).arrival_time;
+      if (~isempty(diff))
+         if (diff < 0) % worker arrived too late
+            wait = wait - diff;
+         else % worker arrived too early
+            idle = idle + diff;
+         end
       end
    end
+   worker_costs(3,w) = wait*pw;
+   worker_costs(4,w) = idle*pi;
 end
-jw = jw*pw;
-ji = ji*pi;
 
-
-jt = 0;
-for w = 1:M
-   jt = jt + workers(w).total_drivetime;
-end
-jt = jt*pt;
-
-
-jo = 0;
+% 5. overtime cost
 L = ssh*60;
 for w = 1:M
    if (workers(w).end_time > L)
-      jo = jo + workers(w).end_time;
+      worker_costs(5,w) = (workers(w).end_time - L)*po;
    end
 end
-jo = jo*po;
 
 
 if (show)
-   figure 
-   X = categorical({'Hiring','Idle','Waiting','Travel','Overtime'});
-   X = reordercats(X,{'Hiring','Idle','Waiting','Travel','Overtime'});
-   Y = [jm, ji, jw, jt, jo];
-   bar(X,Y)
+   figure
+   bar(1:M,worker_costs')
+   xlabel('Worker')
+   ylabel('Cost')
+   title(sprintf('Total Cost: %8.4f',sum(sum(worker_costs))))
+   legend('Hire','Travel','Wait','Idle','Over')
 end
 
 end

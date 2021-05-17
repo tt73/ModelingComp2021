@@ -13,9 +13,8 @@ make_video = false;
 
 minND = floor(num_customers/8); 
 maxND = floor(num_customers*2/3);
-N_best = 1;
+N_best = 3;
 w = linspace(0,1,N_best);
-w = 1;
 finalists = cell(N_best,1);
 for i = 1:N_best
 %    do something 
@@ -26,7 +25,7 @@ end
 % plot the N best sector results
 for i = 1:N_best
    [~,routing,~] = build_sched_DE(finalists{i},customers,Param);
-   plot_routing(routing,[customers.pos],Param,Cost)
+   plot_routing(routing,[customers.pos],Param)
    sgtitle(sprintf('Route #%d, w=%4.2f',i,w(i)))
 end
 
@@ -73,7 +72,6 @@ for j = 1:N_best
    %% Assign routes.
    for i = 1:num_workers
       workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
-      workers(i).schedule = workers(i).tasks;
    end
 
    %% Simulation 

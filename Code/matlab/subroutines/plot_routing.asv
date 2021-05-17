@@ -17,7 +17,7 @@ for i = 1:m
    num_jobs = length(routing{i});
    tour_length(i) = sum(sqrt(( u.^2 + v.^2 )));
    tour_duration(i) = tour_length(i)/param_obj.vel + num_jobs*param_obj.mst;
-   tour_cost(1,i) = cost_obj.pm;
+   tour_cost(1,i) = 
    tour_cost(2,i) = tour_length(i)*cost_obj.pt;
    tour_cost(3,i) = (tour_duration(i) > cost_obj.L*60).*(tour_duration(i) - cost_obj.L*60)*cost_obj.po;
    
@@ -47,8 +47,6 @@ p = f.Position;
 p(3) = 2*p(3); 
 p(4) = 1.2*p(4);
 set(f,'position',p);
-
-sgtitle(sprintf('Total Cost: %8.4f',sum(sum(tour_cost))))
 
 end
 

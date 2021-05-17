@@ -80,9 +80,11 @@ while counter<DEparams.Nmax
    y = sort(y);
    
    % penalize the agent if angles fall out of range
-   if(any(y>pi) || any(y<-pi))
-      continue
-   else
+%    if(any(y>pi) || any(y<-pi))
+%       continue
+%    else
+   y = mod(y+pi,2*pi)-pi;
+     
       
       % If new agent has lower cost, then replace
       % The cost is a weighted average of deterministic cost and variance.
@@ -98,13 +100,14 @@ while counter<DEparams.Nmax
             best = i;
          end
       end
-   end
+  
    
    % Update
    counter = counter + 1;
    
    % check for convregence 
    if (std(wcost) < DEparams.tol)
+      disp('achieved tol')
       break
    end
 end

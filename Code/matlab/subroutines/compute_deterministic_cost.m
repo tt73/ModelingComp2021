@@ -46,7 +46,7 @@ Jm = pm*ones(m,1);         % hire cost
 Jt = tour_distance*pt;     % travel cost
 Jo = ((tour_duration>L*60).*(tour_duration-L*60))*po; % OT cost
 
-J = Jm + Jt + Jo; 
+J = Jt + Jo; 
+vcost = std(J);
+dcost = sum(J+Jm);
 
-dcost = sum(J);
-vcost = var(J);

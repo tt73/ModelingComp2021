@@ -1,0 +1,303 @@
+%% compare buffer time stochastic cost vs optimimezed buffer stochastic cost
+
+%% Add functions in folders to path
+addpath('subroutines')
+addpath('classes')
+clear
+close all
+
+%% Define parameters
+
+% fix seed for rng
+seed = 142;
+% rng(seed)
+
+% total widgh of simulation square grid
+gridsize = 50; % km
+
+% average speed of workers on the road
+worker_vel = 1; % km/min
+
+% service time is random normal
+min_service_time = 30;  % min job duration
+max_service_time = 60;  % max job duration
+mean_service_time = (max_service_time-min_service_time)*rand + min_service_time; % mean service time
+std_service_time = mean_service_time/2; % standard deviation of service time
+
+% Time when overtime hours begin
+standard_service_hours = rand*2+6; % 6 to 8 hours
+
+% Probability that a customer cancels his appointment after the appiontment was made
+cancel_prob = 0.05;
+
+% Cost parameters
+worker_hire_cost = 150;       % pm
+customer_wait_rate = rand*10; % pw
+worker_idle_rate = rand*5;    % pi
+worker_travel_rate = 2;       % pt
+worker_OT_rate = 1.5*worker_idle_rate; % po
+
+fprintf('Hire Cost   = %.3f\n',worker_hire_cost)
+fprintf('Wait Cost   = %.3f\n',customer_wait_rate)
+fprintf('Idle Cost   = %.3f\n',worker_idle_rate)
+fprintf('OT Cost     = %.3f\n',worker_OT_rate)
+fprintf('Serv. hours = %.3f\n',standard_service_hours)
+
+%% Generate Customers
+
+% customer parameters
+choices = [20, 30, 40, 50];
+num_customers = choices(3);  % number of customers
+
+% generate an array of customers
+customers = Customer(gridsize,num_customers);
+
+% generate random service6time for each customer
+for i = 1:num_customers
+   customers(i).service_time = normrnd(mean_service_time,std_service_time); % N(mst,std)
+end
+
+fprintf('Num customers = %d\n',num_customers);
+
+%% Simulate cancellation.
+cancels = [];
+for i = 1:num_customers
+   if (rand < cancel_prob)
+      customers(i).status = 4;
+      cancels = [cancels, i];
+   end
+end
+disp("cancellations:")
+disp(cancels)
+
+%% Create parameter structs
+%
+% Group variables into objects to make subroutine calling easier.
+
+% paramter object
+Param.vel = worker_vel;
+Param.gs = gridsize;
+Param.mst = mean_service_time;
+Param.std = std_service_time;
+Param.c = cancel_prob;
+Param.cancels = cancels;
+
+% cost object
+Cost.pm = worker_hire_cost;
+Cost.pw = customer_wait_rate;
+Cost.pi = worker_idle_rate;
+Cost.pt = worker_travel_rate;
+Cost.po = worker_OT_rate;
+Cost.L = standard_service_hours;
+
+
+%% customer range
+minND = floor(num_customers/8);
+maxND = floor(num_customers*2/3);
+
+fprintf('Customer sweep range: %d to %d\n',minND,maxND)
+
+%% Choose parmeter
+
+w = 0.0;
+fprintf('Parameter w: %f\n',w)
+
+
+%% Choose routing for DE
+finalist = DetermineSectors(customers,minND,maxND,w,Param,Cost);
+[~,de_routing,~] = build_sched_DE(finalist,customers,Param);
+plot_routing(de_routing,[customers.pos],Param,Cost)
+[dc,~] = compute_deterministic_cost(de_routing, customers, Param, Cost);
+fprintf('Deterministic Cost     = %10.4f\n',dc)
+[arrival_times,routing,num_workers] = build_sched_DE(finalist,customers,Param);
+
+
+
+%% Cost without buffer time
+
+workers = Worker(num_workers);
+for i = 1:num_workers
+   workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
+   workers(i).schedule = workers(i).tasks;
+end
+
+for i = 1:num_customers
+   customers(i).scheduled_time = arrival_times(i);
+end
+
+% set the seed
+rng(seed)
+
+t = 0;
+dt = 1; % time increment
+simulation_done = false;
+
+while (~simulation_done)
+   
+   % Assign destination to idle workers.
+   % There will be some noise in the speed due to traffic.
+   for w = 1:num_workers
+      if (workers(w).status == 0)
+         %          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+         workers(w) = choose_dest_and_speed(workers(w),customers,Param.vel);
+      end
+   end
+   
+   % Update customers.
+   for c = 1:num_customers
+      switch customers(c).status
+         % Case 0: determine if appointment time has passed
+         case 0
+            customers(c) = customers(c).check_status(t);
+            
+         case {1,2,3,4}
+            continue % do nothing
+      end
+   end
+   
+   % update workers based on status
+   for w = 1:num_workers
+      c = workers(w).curtask; % c is the current customer of focus
+      switch workers(w).status
+         
+         % Case 1: move until destination is reached
+         case 1
+            [workers(w),reached] = workers(w).move(dt);
+            if (reached)
+               if (c > 0)
+                  customers(c).arrival_time = t;
+               else
+                  workers(w).end_time = t;
+               end
+            end
+            
+            % Case 2: wait until scheduled time is passed
+         case 2
+            [workers(w),ready] = workers(w).wait(dt,t,customers(c).scheduled_time);
+            if (ready)
+               customers(c).status = 2;
+            end
+            
+            % Case 3: work until the job is done
+         case 3
+            [workers(w),finished] = workers(w).work(dt,customers(c).service_time);
+            if (finished)
+               customers(workers(w).curtask).status = 3;
+            end
+      end
+   end
+   
+   simulation_done = check_workers(num_workers,workers);
+   t = t + dt;
+end
+
+[worker_cost] = compute_simulation_cost(workers, customers, Cost, true);
+zero_buffer_cost = sum(sum(worker_cost))
+
+
+%% Cost with buffer time
+
+workers = Worker(num_workers);
+for i = 1:num_workers
+   workers(i).tasks = routing{i}(~ismember(routing{i},cancels));
+   workers(i).schedule = workers(i).tasks;
+end
+
+num_runs = 50; % choose high num_runs if cancellation rate is high
+
+% searches for buffer times in the initial interval [-l,l]
+l = Param.mst*ones(num_customers,1)/2;
+
+% gets the stochastic scheduling cost
+J = @(d)getSchedulingCost(d,workers,customers,...
+   Param,Cost,arrival_times,routing,num_runs);
+
+% sets the relevant Diffevo parameters
+DEparams.ND = num_customers;    % dimension of input
+DEparams.CR = 0.9;  % mutation probability (0,1)
+DEparams.F = 0.8;   % mutation strength (0,2)
+DEparams.NP = 10;   % num_customers*10;   % pop size
+DEparams.Nmax = 10; % number of evolutions
+
+% the final generation of optimal deltas
+%    delta = zeros(num_customers,1);
+[pop,costs] = diffevoDelta(J,l,DEparams,Cost);
+[~,ind] = min(costs);
+delta = pop(:,ind);
+
+for i = 1:num_customers
+   customers(i).status = 0;
+   if ( ismember(i,cancels))
+      customers(i).status = 4;
+   end
+   customers(i).scheduled_time = max(floor(arrival_times(i)) + delta(i),0);
+end
+
+% set the seed
+rng(seed)
+
+t = 0;
+dt = 1; % time increment
+simulation_done = false;
+
+while (~simulation_done)
+   
+   % Assign destination to idle workers.
+   % There will be some noise in the speed due to traffic.
+   for w = 1:num_workers
+      if (workers(w).status == 0)
+         %          workers(w) = workers(w).choose_dest_and_speed(customers,vel);
+         workers(w) = choose_dest_and_speed(workers(w),customers,Param.vel);
+      end
+   end
+   
+   % Update customers.
+   for c = 1:num_customers
+      switch customers(c).status
+         % Case 0: determine if appointment time has passed
+         case 0
+            customers(c) = customers(c).check_status(t);
+            
+         case {1,2,3,4}
+            continue % do nothing
+      end
+   end
+   
+   % update workers based on status
+   for w = 1:num_workers
+      c = workers(w).curtask; % c is the current customer of focus
+      switch workers(w).status
+         
+         % Case 1: move until destination is reached
+         case 1
+            [workers(w),reached] = workers(w).move(dt);
+            if (reached)
+               if (c > 0)
+                  customers(c).arrival_time = t;
+               else
+                  workers(w).end_time = t;
+               end
+            end
+            
+            % Case 2: wait until scheduled time is passed
+         case 2
+            [workers(w),ready] = workers(w).wait(dt,t,customers(c).scheduled_time);
+            if (ready)
+               customers(c).status = 2;
+            end
+            
+            % Case 3: work until the job is done
+         case 3
+            [workers(w),finished] = workers(w).work(dt,customers(c).service_time);
+            if (finished)
+               customers(workers(w).curtask).status = 3;
+            end
+      end
+   end
+   
+   simulation_done = check_workers(num_workers,workers);
+   t = t + dt;
+end
+
+[worker_cost] = compute_simulation_cost(workers, customers, Cost, true);
+optimized_cost = sum(sum(worker_cost))

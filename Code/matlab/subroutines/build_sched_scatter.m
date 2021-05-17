@@ -56,6 +56,9 @@ while (~all(arrival_times))
       end
    end
    t = t + dt;
+   if (t > 10000)
+      warning('possible infinite loop')
+   end
 end
 
 end
